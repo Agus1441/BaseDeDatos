@@ -28,6 +28,7 @@ CREATE TABLE turnos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     hora_inicio TIME NOT NULL,
     hora_fin TIME NOT NULL
+    CHECK (hora_inicio < hora_fin)
 );
 
 CREATE TABLE alumnos (
@@ -46,6 +47,7 @@ CREATE TABLE clase (
     FOREIGN KEY (ci_instructor) REFERENCES instructores(ci),
     FOREIGN KEY (id_actividad) REFERENCES actividades(id),
     FOREIGN KEY (id_turno) REFERENCES turnos(id)
+    UNIQUE (ci_instructor, id_turno)
 );
 
 CREATE TABLE alumno_clase (
