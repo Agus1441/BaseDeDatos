@@ -25,7 +25,9 @@ CREATE TABLE equipamiento (
 CREATE TABLE instructores (
     ci VARCHAR(20) PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
-    apellido VARCHAR(100) NOT NULL
+    apellido VARCHAR(100) NOT NULL,
+    correo VARCHAR(255) NOT NULL,
+    FOREIGN KEY (correo) REFERENCES login(correo)
 );
 
 CREATE TABLE turnos (
@@ -40,8 +42,9 @@ CREATE TABLE alumnos (
     nombre VARCHAR(100) NOT NULL,
     apellido VARCHAR(100) NOT NULL,
     fecha_nacimiento DATE NOT NULL,
-    correo VARCHAR(255),
-    telefono VARCHAR(20)
+    correo VARCHAR(255) NOT NULL ,
+    telefono VARCHAR(20) NOT NULL,
+    FOREIGN KEY (correo) REFERENCES login(correo)
 );
 
 CREATE TABLE clase (
