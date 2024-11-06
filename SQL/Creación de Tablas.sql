@@ -1,7 +1,8 @@
-DROP DATABASE IF EXISTS obligatorio;
+DROP DATABASE IF EXISTS EscuelaNieve;
 
 CREATE DATABASE EscuelaNieve DEFAULT CHARACTER SET utf8 COLLATE utf8_spanish_ci;
 USE EscuelaNieve;
+
 
 CREATE TABLE login (
     correo VARCHAR(255) PRIMARY KEY,
@@ -31,7 +32,7 @@ CREATE TABLE instructores (
 CREATE TABLE turnos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     hora_inicio TIME NOT NULL,
-    hora_fin TIME NOT NULL
+    hora_fin TIME NOT NULL,
     CHECK (hora_inicio < hora_fin)
 );
 
@@ -39,7 +40,9 @@ CREATE TABLE alumnos (
     ci VARCHAR(20) PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     apellido VARCHAR(100) NOT NULL,
-    fecha_nacimiento DATE NOT NULL
+    fecha_nacimiento DATE NOT NULL,
+    correo VARCHAR(255),
+    telefono VARCHAR(20)
 );
 
 CREATE TABLE clase (
@@ -64,7 +67,5 @@ CREATE TABLE alumno_clase (
     FOREIGN KEY (id_equipamiento) REFERENCES equipamiento(id)
 );
 
-ALTER TABLE alumnos
-    ADD COLUMN correo VARCHAR(255),
-    ADD COLUMN telefono VARCHAR(20);
+
 
