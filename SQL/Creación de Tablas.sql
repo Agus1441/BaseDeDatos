@@ -3,7 +3,6 @@ DROP DATABASE IF EXISTS EscuelaNieve;
 CREATE DATABASE EscuelaNieve DEFAULT CHARACTER SET utf8 COLLATE utf8_spanish_ci;
 USE EscuelaNieve;
 
-
 CREATE TABLE login (
     rol ENUM ('instructor','alumno','administrador') NOT NULL DEFAULT 'alumno',
     correo VARCHAR(255) PRIMARY KEY,
