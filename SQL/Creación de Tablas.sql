@@ -5,10 +5,10 @@ USE EscuelaNieve;
 
 
 CREATE TABLE login (
+    rol ENUM ('instructor','alumno','administrador') NOT NULL DEFAULT 'alumno',
     correo VARCHAR(255) PRIMARY KEY,
     contraseña VARCHAR(255) NOT NULL
 );
-
 CREATE TABLE actividades (
     id INT AUTO_INCREMENT PRIMARY KEY,
     descripcion VARCHAR(255) NOT NULL,
