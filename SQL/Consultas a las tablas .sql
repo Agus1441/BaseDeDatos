@@ -1,6 +1,7 @@
 USE EscuelaNieve;
 
 # Actividades que más ingresos generan – se debe sumar el costo de equipamiento
+
 SELECT
     a.descripcion AS nombre_actividad,
     SUM(a.costo + e.costo) AS ingresos_totales
@@ -21,6 +22,7 @@ GROUP BY a.descripcion
 ORDER BY cantidad_alumnos DESC;
 
 # Los turnos con más clases dictadas
+
 SELECT a.descripcion AS nombre_actividad,
        t.hora_inicio AS turno_inicio,
        t.hora_fin AS turno_fin,
