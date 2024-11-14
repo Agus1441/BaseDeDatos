@@ -6,7 +6,8 @@ const InstructorList = ({ instructors, onEdit, onDelete }) => {
       <thead>
         <tr>
           <th>Nombre</th>
-          <th>Correo Electrónico</th>
+          <th>Apellido</th>
+          <th>ci</th>
           <th>Acciones</th>
         </tr>
       </thead>
