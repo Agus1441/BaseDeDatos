@@ -5,14 +5,29 @@ services:
     image: mysql:5.7
     container_name: escuela_nieve_db
     environment:
-      MYSQL_USER : root
-      MYSQL_PASSWORD : rootpassword
-      MYSQL_DB : EscuelaNieve
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: EscuelaNieve
     ports:
       - '3306:3306'
     volumes:
       - mysql_data:/var/lib/mysql
+
+  flask_app:
+    build: .
+    container_name: escuela_nieve_flask
+    environment:
+      - FLASK_APP=main.py
+      - FLASK_ENV=development
+    depends_on:
+      - db
+    ports:
+      - '5000:5000'
+    volumes:
+      - .:/app
+    command: flask run --host=0.0.0.0
+
 volumes:
   mysql_data:
+
 
 
