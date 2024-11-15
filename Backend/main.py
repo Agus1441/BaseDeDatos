@@ -17,12 +17,12 @@ config_db = {
     'database': 'escuela_nieve'
 }
 
-#Endpoint Inicial
+# Endpoint Inicial
 @app.route('/')
 def index():
     return "API de Escuela de Nieve funcionando"
 
-#Endpoint para Mostrar las Tablas de la Base de Datos
+# Mostrar las Tablas de la Base de Datos
 @app.route('/tablas', methods=['GET'])
 def listar_tablas():
     """
@@ -42,7 +42,43 @@ def listar_tablas():
 
 
 
+
+
+
+
 # ========== Endpoints para Instructores ==========
+
+# Obtener todos los Instructores
+@app.route('/instructores', methods=['GET'])
+def obtener_instructores():
+    """
+    Obtener todos los instructores.
+    ---
+    tags:
+      - Instructores
+    responses:
+      200:
+        description: Lista de instructores.
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              CI:
+                type: integer
+              nombre:
+                type: string
+              apellido:
+                type: string
+    """
+    connection = mysql.connector.connect(**config_db)
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM instructores")
+    result = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    return jsonify([{'CI': row[0], 'nombre': row[1], 'apellido': row[2]} for row in result])
 
 # Alta de Instructor
 @app.route('/instructores', methods=['POST'])
@@ -210,7 +246,51 @@ def modificar_instructor(ci):
 
 
 
+
+
+
 # ========== Endpoints para Turnos ==========
+
+# Obtener todos los Turnos
+@app.route('/turnos', methods=['GET'])
+def obtener_turnos():
+    """
+    Obtener todos los turnos.
+    ---
+    tags:
+      - Turnos
+    responses:
+      200:
+        description: Lista de turnos.
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              ID:
+                type: integer
+              hora_inicio:
+                type: string
+              hora_fin:
+                type: string
+    """
+    connection = mysql.connector.connect(**config_db)
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM turnos")
+    result = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    # Convertir timedelta a string para poder serializarlo como JSON
+    turnos = []
+    for row in result:
+        turnos.append({
+            'ID': row[0],
+            'hora_inicio': str(row[1]), 
+            'hora_fin': str(row[2])     
+        })
+
+    return jsonify(turnos)
 
 # Alta de Turno
 @app.route('/turnos', methods=['POST'])
@@ -374,7 +454,49 @@ def modificar_turno(id):
 
 
 
+
+
+
+
 # ========== Endpoints para Alumnos ==========
+
+# Obtener todos los Alumnos
+@app.route('/alumnos', methods=['GET'])
+def obtener_alumnos():
+    """
+    Obtener todos los alumnos.
+    ---
+    tags:
+      - Alumnos
+    responses:
+      200:
+        description: Lista de alumnos.
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              CI:
+                type: integer
+              nombre:
+                type: string
+              apellido:
+                type: string
+              fecha_nacimiento:
+                type: string
+              correo:
+                type: string
+              telefono:
+                type: string
+    """
+    connection = mysql.connector.connect(**config_db)
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM alumnos")
+    result = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    return jsonify([{'CI': row[0], 'nombre': row[1], 'apellido': row[2], 'fecha_nacimiento': row[3], 'correo': row[4], 'telefono': row[5]} for row in result])
 
 # Alta de Alumno
 @app.route('/alumnos', methods=['POST'])
@@ -583,6 +705,176 @@ def modificar_alumno(ci):
 
 
 
+
+
+
+
+
+
+
+# ========= Endpoints para Actividades ==========
+
+# Obtener todas las Actividades
+@app.route('/actividades', methods=['GET'])
+def obtener_actividades():
+    """
+    Obtener todas las actividades.
+    ---
+    tags:
+      - Actividades
+    responses:
+      200:
+        description: Lista de actividades.
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              ID:
+                type: integer
+              nombre:
+                type: string
+              descripcion:
+                type: string
+              costo:
+                type: number
+              edadRequerida:
+                type: integer
+    """
+    connection = mysql.connector.connect(**config_db)
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM actividades")
+    result = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    return jsonify([{'ID': row[0], 'nombre': row[1], 'descripcion': row[2], 'costo': row[3], 'edadRequerida': row[4]} for row in result])
+
+# Modificación de Actividad
+@app.route('/actividades/<int:id_actividad>', methods=['PUT'])
+def modificar_actividad(id_actividad):
+    """
+    Modificar una actividad existente.
+    ---
+    tags:
+      - Actividades
+    parameters:
+      - name: id_actividad
+        in: path
+        type: integer
+        required: true
+        description: ID de la actividad a modificar.
+      - name: body
+        in: body
+        required: true
+        description: Datos de la actividad a modificar. Al menos uno de los campos es obligatorio.
+        schema:
+          type: object
+          properties:
+            nombre:
+              type: string
+              description: Nuevo nombre de la actividad.
+            descripcion:
+              type: string
+              description: Nueva descripción de la actividad.
+            costo:
+              type: number
+              format: float
+              description: Nuevo costo de la actividad.
+    responses:
+      200:
+        description: Actividad actualizada exitosamente.
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Actividad actualizada exitosamente
+      400:
+        description: Error en la solicitud. No se proporcionaron campos para actualizar.
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Debe proporcionar al menos un campo para actualizar
+      404:
+        description: Actividad no encontrada.
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Actividad no encontrada
+      500:
+        description: Error interno del servidor.
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Error al actualizar la actividad
+    """
+    data = request.json
+    nombre = data.get('nombre')
+    descripcion = data.get('descripcion')
+    costo = data.get('costo')
+
+    # Verificación de que al menos un campo sea proporcionado
+    if not (nombre or descripcion or costo):
+        return jsonify({'error': 'Debe proporcionar al menos un campo para actualizar'}), 400
+
+    connection = mysql.connector.connect(**config_db)
+    cursor = connection.cursor()
+    
+    try:
+        # Construcción de la consulta de actualización dinámica
+        query = "UPDATE actividades SET "
+        values = []
+        
+        if nombre:
+            query += "nombre = %s, "
+            values.append(nombre)
+        
+        if descripcion:
+            query += "descripcion = %s, "
+            values.append(descripcion)
+        
+        if costo:
+            query += "costo = %s, "
+            values.append(costo)
+        
+        # Remueve la última coma y espacio, y añade la condición WHERE
+        query = query.rstrip(', ')
+        query += " WHERE ID = %s"
+        values.append(id_actividad)
+
+        cursor.execute(query, tuple(values))
+        
+        if cursor.rowcount == 0:
+            return jsonify({'error': 'Actividad no encontrada'}), 404
+        
+        connection.commit()
+        return jsonify({'message': 'Actividad actualizada exitosamente'}), 200
+
+    except mysql.connector.Error as err:
+        connection.rollback()
+        return jsonify({'error': str(err)}), 500
+
+    finally:
+        cursor.close()
+        connection.close()
+
+
+
+
+
+
+
+
+
+
+
 # ========== Endpoints para Autenticación ==========
 
 # Login - Inicio de sesión
@@ -727,7 +1019,50 @@ def registro():
 
 
 
+
+
+
 # ========== Endpoints para Clases ============
+
+# Obtener todas las Clases
+@app.route('/clases', methods=['GET'])
+def obtener_clases():
+    """
+    Obtener todas las clases.
+    ---
+    tags:
+      - Clases
+    responses:
+      200:
+        description: Lista de clases.
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              ID:
+                type: integer
+              CI_Instructor:
+                type: integer
+              ID_Actividad:
+                type: integer
+              ID_Turno:
+                type: integer
+              Cupos:
+                type: integer
+              Fecha_inicio:
+                type: string
+              Fecha_fin:
+                type: string
+    """
+    connection = mysql.connector.connect(**config_db)
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM clases")
+    result = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    return jsonify([{'ID': row[0], 'CI_Instructor': row[1], 'ID_Actividad': row[2], 'ID_Turno': row[3], 'Cupos': row[4], 'Fecha_inicio': row[5], 'Fecha_fin': row[6]} for row in result])
 
 # Función para verificar solapamiento de horarios y fechas
 def verificar_solapamiento(instructor_id, turno_id, fecha_inicio, fecha_fin):
@@ -928,62 +1263,242 @@ def modificar_clase(clase_id):
 
 
 
-# ========== Otros Endpoints ===========
 
-# Modificación de Actividad
-@app.route('/actividades/<int:id_actividad>', methods=['PUT'])
-def modificar_actividad(id_actividad):
-    data = request.json
-    nombre = data.get('nombre')
-    descripcion = data.get('descripcion')
-    costo = data.get('costo')
 
-    # Verificación de que al menos un campo sea proporcionado
-    if not (nombre or descripcion or costo):
-        return jsonify({'error': 'Debe proporcionar al menos un campo para actualizar'}), 400
+# =========== Endpoints para Reportes ===========
+
+# Actividades Ordenadas por Ingresos Generados
+@app.route('/actividades/ingresos', methods=['GET'])
+def ver_actividades_por_ingresos():
+    """
+    Ver actividades ordenadas por ingresos totales.
+    ---
+    tags:
+      - Reportes
+    parameters:
+      - name: fecha_inicio
+        in: query
+        type: string
+        format: date
+        required: true
+        description: Fecha de inicio (YYYY-MM-DD).
+      - name: fecha_fin
+        in: query
+        type: string
+        format: date
+        required: true
+        description: Fecha de fin (YYYY-MM-DD).
+    responses:
+      200:
+        description: Lista de actividades ordenadas por ingresos totales.
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              actividad:
+                type: string
+              ingresos_totales:
+                type: number
+    """
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
 
     connection = mysql.connector.connect(**config_db)
     cursor = connection.cursor()
-    
-    try:
-        # Construcción de la consulta de actualización dinámica
-        query = "UPDATE actividades SET "
-        values = []
-        
-        if nombre:
-            query += "nombre = %s, "
-            values.append(nombre)
-        
-        if descripcion:
-            query += "descripcion = %s, "
-            values.append(descripcion)
-        
-        if costo:
-            query += "costo = %s, "
-            values.append(costo)
-        
-        # Remueve la última coma y espacio, y añade la condición WHERE
-        query = query.rstrip(', ')
-        query += " WHERE ID = %s"
-        values.append(id_actividad)
 
-        cursor.execute(query, tuple(values))
-        
-        if cursor.rowcount == 0:
-            return jsonify({'error': 'Actividad no encontrada'}), 404
-        
-        connection.commit()
-        return jsonify({'message': 'Actividad actualizada exitosamente'}), 200
+    query = """
+    SELECT 
+        a.nombre AS actividad, 
+        (COALESCE(SUM(ac_ingresos.total_ingresos_actividad), 0) 
+         + COALESCE(SUM(alq_ingresos.total_ingresos_alquiler), 0)) AS ingresos_totales
+    FROM 
+        actividades a
+    LEFT JOIN (
+        SELECT 
+            c.ID_Actividad, 
+            SUM(act.costo) AS total_ingresos_actividad
+        FROM 
+            alumno_clase ac
+        JOIN 
+            clases c ON ac.ID_Clase = c.ID
+        JOIN 
+            actividades act ON c.ID_Actividad = act.ID
+        WHERE 
+            c.Fecha_inicio >= %s AND c.Fecha_fin <= %s
+        GROUP BY 
+            c.ID_Actividad
+    ) AS ac_ingresos ON a.ID = ac_ingresos.ID_Actividad
+    LEFT JOIN (
+        SELECT 
+            c.ID_Actividad, 
+            SUM(e.costo) AS total_ingresos_alquiler
+        FROM 
+            alquiler al
+        JOIN 
+            equipamiento e ON al.ID_Equipamiento = e.ID
+        JOIN 
+            clases c ON al.ID_Clase = c.ID
+        WHERE 
+            al.fecha_inicio >= %s AND al.fecha_fin <= %s
+        GROUP BY 
+            c.ID_Actividad
+    ) AS alq_ingresos ON a.ID = alq_ingresos.ID_Actividad
+    GROUP BY 
+        a.ID, a.nombre
+    ORDER BY 
+        ingresos_totales DESC;
+    """
+    cursor.execute(query, (fecha_inicio, fecha_fin, fecha_inicio, fecha_fin))
+    result = cursor.fetchall()
 
-    except mysql.connector.Error as err:
-        connection.rollback()
-        return jsonify({'error': str(err)}), 500
+    cursor.close()
+    connection.close()
 
-    finally:
-        cursor.close()
-        connection.close()
+    return jsonify([{'actividad': row[0], 'ingresos_totales': row[1]} for row in result])
 
-# Endpoint para inscribir a un alumno a una clase
+# Actividades Ordenadas por Cantidad de Alumnos
+@app.route('/actividades/alumnos', methods=['GET'])
+def ver_actividades_por_alumnos():
+    """
+    Ver actividades ordenadas por cantidad de alumnos inscritos.
+    ---
+    tags:
+      - Reportes
+    parameters:
+      - name: fecha_inicio
+        in: query
+        type: string
+        format: date
+        required: true
+        description: Fecha de inicio (YYYY-MM-DD).
+      - name: fecha_fin
+        in: query
+        type: string
+        format: date
+        required: true
+        description: Fecha de fin (YYYY-MM-DD).
+    responses:
+      200:
+        description: Lista de actividades ordenadas por cantidad de alumnos inscritos.
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              actividad:
+                type: string
+              cantidad_alumnos:
+                type: integer
+    """
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
+
+    connection = mysql.connector.connect(**config_db)
+    cursor = connection.cursor()
+
+    query = """
+    SELECT 
+        a.nombre AS actividad, 
+        COUNT(ac.ID_Alumno) AS cantidad_alumnos
+    FROM 
+        actividades a
+    JOIN 
+        clases c ON a.ID = c.ID_Actividad
+    LEFT JOIN 
+        alumno_clase ac ON c.ID = ac.ID_Clase
+    WHERE 
+        c.Fecha_inicio >= %s AND c.Fecha_fin <= %s
+    GROUP BY 
+        a.ID, a.nombre
+    ORDER BY 
+        cantidad_alumnos DESC;
+    """
+    cursor.execute(query, (fecha_inicio, fecha_fin))
+    result = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return jsonify([{'actividad': row[0], 'cantidad_alumnos': row[1]} for row in result])
+
+# Turnos Ordenados por Cantidad de Clases
+@app.route('/turnos/clases', methods=['GET'])
+def ver_turnos_por_clases():
+    """
+    Ver turnos ordenados por cantidad de clases dictadas.
+    ---
+    tags:
+      - Reportes
+    parameters:
+      - name: fecha_inicio
+        in: query
+        type: string
+        format: date
+        required: true
+        description: Fecha de inicio (YYYY-MM-DD).
+      - name: fecha_fin
+        in: query
+        type: string
+        format: date
+        required: true
+        description: Fecha de fin (YYYY-MM-DD).
+    responses:
+      200:
+        description: Lista de turnos ordenados por cantidad de clases dictadas.
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              turno:
+                type: string
+              cantidad_clases:
+                type: integer
+    """
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
+
+    connection = mysql.connector.connect(**config_db)
+    cursor = connection.cursor()
+
+    query = """
+    SELECT 
+        CONCAT(t.hora_inicio, ' - ', t.hora_fin) AS turno, 
+        COUNT(c.ID) AS cantidad_clases
+    FROM 
+        turnos t
+    JOIN 
+        clases c ON t.ID = c.ID_Turno
+    WHERE 
+        c.Fecha_inicio >= %s AND c.Fecha_fin <= %s
+    GROUP BY 
+        t.ID, t.hora_inicio, t.hora_fin
+    ORDER BY 
+        cantidad_clases DESC;
+    """
+    cursor.execute(query, (fecha_inicio, fecha_fin))
+    result = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return jsonify([{'turno': row[0], 'cantidad_clases': row[1]} for row in result])
+
+
+
+
+
+
+
+
+
+
+
+
+# ========== Endpoints para Otras Operaciones ===========
+
+# Inscribir un alumno a una clase
 @app.route('/inscribir', methods=['POST'])
 def inscribir_alumno():
     """
@@ -1074,7 +1589,7 @@ def inscribir_alumno():
         cursor.close()
         conn.close()
 
-# Endpoint para dar de baja a un alumno de una clase
+# Dar de baja a un alumno de una clase
 @app.route('/desinscribir', methods=['DELETE'])
 def dar_de_baja_alumno():
     """
@@ -1131,7 +1646,7 @@ def dar_de_baja_alumno():
         cursor.close()
         conn.close()
 
-# Endpoint para Alquilar un Equipamiento
+# Alquilar un Equipamiento
 @app.route('/alquiler', methods=['POST'])
 def alquilar_equipamiento():
     """
@@ -1215,6 +1730,193 @@ def alquilar_equipamiento():
     finally:
         cursor.close()
         conn.close()
+
+# Obtener todos los Equipamientos
+@app.route('/equipamientos', methods=['GET'])
+def obtener_equipamientos():
+    """
+    Obtener todos los equipamientos.
+    ---
+    tags:
+      - Equipamientos
+    responses:
+      200:
+        description: Lista de equipamientos.
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              ID:
+                type: integer
+              nombre:
+                type: string
+              descripcion:
+                type: string
+              costo:
+                type: number
+    """
+    connection = mysql.connector.connect(**config_db)
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM equipamiento")
+    result = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    return jsonify([{'ID': row[0], 'nombre': row[1], 'descripcion': row[2], 'costo': row[3]} for row in result])
+
+# Obtener los equipamientos requeridos para una actividad específica
+@app.route('/equipamientos/<int:id_actividad>', methods=['GET'])
+def equipamientos_requeridos(id_actividad):
+    """
+    Obtener equipamientos requeridos para una actividad.
+    ---
+    tags:
+      - Equipamientos
+    parameters:
+      - name: id_actividad
+        in: path
+        type: integer
+        required: true
+        description: ID de la actividad.
+    responses:
+      200:
+        description: Lista de equipamientos requeridos.
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              ID:
+                type: integer
+              nombre:
+                type: string
+              descripcion:
+                type: string
+              costo:
+                type: number
+    """
+    connection = mysql.connector.connect(**config_db)
+    cursor = connection.cursor()
+    query = """
+    SELECT e.ID, e.nombre, e.descripcion, e.costo
+    FROM equipamiento e
+    JOIN equipamiento_actividad ea ON e.ID = ea.ID_Equipamiento
+    WHERE ea.ID_Actividad = %s
+    """
+    cursor.execute(query, (id_actividad,))
+    result = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    return jsonify([{'ID': row[0], 'nombre': row[1], 'descripcion': row[2], 'costo': row[3]} for row in result])
+
+# Obtener las clases a las que un alumno específico está inscripto
+@app.route('/inscripciones/<int:ci_alumno>', methods=['GET'])
+def ver_inscripciones(ci_alumno):
+    """
+    Obtener todas las clases a las que un alumno está inscrito.
+    ---
+    tags:
+      - Inscripciones
+    parameters:
+      - name: ci_alumno
+        in: path
+        type: integer
+        required: true
+        description: CI del alumno.
+    responses:
+      200:
+        description: Lista de clases del alumno.
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              ID:
+                type: integer
+              CI_Instructor:
+                type: integer
+              ID_Actividad:
+                type: integer
+              ID_Turno:
+                type: integer
+              Cupos:
+                type: integer
+              Fecha_inicio:
+                type: string
+              Fecha_fin:
+                type: string
+    """
+    connection = mysql.connector.connect(**config_db)
+    cursor = connection.cursor()
+    query = """
+    SELECT c.*
+    FROM clases c
+    JOIN alumno_clase ac ON c.ID = ac.ID_Clase
+    WHERE ac.ID_Alumno = %s
+    """
+    cursor.execute(query, (ci_alumno,))
+    result = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    return jsonify([{'ID': row[0], 'CI_Instructor': row[1], 'ID_Actividad': row[2], 'ID_Turno': row[3], 'Cupos': row[4], 'Fecha_inicio': row[5], 'Fecha_fin': row[6]} for row in result])
+
+# Obtener las clases dadas por un instructor específico
+@app.route('/clases_instructor/<int:ci_instructor>', methods=['GET'])
+def clases_dadas_por(ci_instructor):
+    """
+    Obtener todas las clases de un instructor.
+    ---
+    tags:
+      - Clases
+    parameters:
+      - name: ci_instructor
+        in: path
+        type: integer
+        required: true
+        description: CI del instructor.
+    responses:
+      200:
+        description: Lista de clases del instructor.
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              ID:
+                type: integer
+              CI_Instructor:
+                type: integer
+              ID_Actividad:
+                type: integer
+              ID_Turno:
+                type: integer
+              Cupos:
+                type: integer
+              Fecha_inicio:
+                type: string
+              Fecha_fin:
+                type: string
+    """
+    connection = mysql.connector.connect(**config_db)
+    cursor = connection.cursor()
+    query = "SELECT * FROM clases WHERE CI_Instructor = %s"
+    cursor.execute(query, (ci_instructor,))
+    result = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    return jsonify([{'ID': row[0], 'CI_Instructor': row[1], 'ID_Actividad': row[2], 'ID_Turno': row[3], 'Cupos': row[4], 'Fecha_inicio': row[5], 'Fecha_fin': row[6]} for row in result])
+
+
+
+
+
+
+
+
 
 
 
