@@ -16,6 +16,9 @@ const Home = () => {
         <Link to="/activities">
           <button>Ver y gestionar actividades</button>
         </Link>
+        <Link to="/classes">
+          <button>Ver y gestionar clases</button>
+        </Link>
       </div>
     </div>
   );

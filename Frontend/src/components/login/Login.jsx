@@ -17,10 +17,11 @@ const Login = ({ onLogin }) => {
 
     if (isAuthenticated && formData.role === 'admin') {
       navigate('/home'); // Redirige a la página de inicio si el usuario es un administrador
-    } else if (isAuthenticated) {
-      // Puedes manejar redirecciones para otros roles si es necesario
-      alert('Inicio de sesión exitoso');
-    } else {
+    } else if (isAuthenticated && formData.role === 'student') {
+      
+    } else if (isAuthenticated && formData.role === 'instructor') {
+      
+    }else {
       alert('Error de inicio de sesión. Verifique sus credenciales.');
     }
   };
@@ -38,27 +39,25 @@ const Login = ({ onLogin }) => {
             </select>
         </label>
         <label>
-            {formData.role === 'student' ? 'Gmail:' : 'CI:'}
+            Gmail:
             <input
-            type="text"
+            type="email"
             name="identifier"
             value={formData.identifier}
             onChange={handleChange}
             required
             />
         </label>
-        {formData.role === 'admin' && (
-            <label>
-            Contraseña:
-            <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-            />
-            </label>
-        )}
+        <label>
+          Contraseña:
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
+        </label>
         <button type="submit">Iniciar Sesión</button>
         </form>
         <p>No existe un administrador? Registra uno <Link to='register'>aqui</Link></p>

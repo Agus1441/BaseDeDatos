@@ -5,16 +5,19 @@ const InstructorList = ({ instructors, onEdit, onDelete }) => {
     <table>
       <thead>
         <tr>
+          <th>ci</th>
           <th>Nombre</th>
           <th>Apellido</th>
-          <th>ci</th>
+          <th>Correo</th>
           <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
         {instructors.map((instructor, index) => (
           <tr key={index}>
+            <td>{instructor.ci}</td>
             <td>{instructor.name}</td>
+            <td>{instructor.lastName}</td>
             <td>{instructor.email}</td>
             <td>
               <button onClick={() => onEdit(instructor)}>Editar</button>
