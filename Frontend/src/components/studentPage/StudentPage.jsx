@@ -6,7 +6,7 @@ const StudentPage= () => {
     <div>
       <h1>Bienvenido</h1>
       <div>
-        
+
       </div>
     </div>
   );

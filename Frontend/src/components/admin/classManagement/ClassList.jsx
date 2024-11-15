@@ -6,7 +6,7 @@ const ClassList = ({ classes, onEdit, onDelete }) => (
     <ul>
       {classes.map((classItem, index) => (
         <li key={index}>
-          <strong>CI:</strong> {classItem.ci}, <strong>Actividad:</strong> {classItem.activity}, <strong>Horario:</strong> {classItem.schedule}
+          <strong>CI:</strong> {classItem.ci},<strong>Actividad:</strong> {classItem.activity}, <strong>Horario:</strong> {classItem.schedule}
           <button onClick={() => onEdit(classItem)}>Editar</button>
           <button onClick={() => onDelete(classItem)}>Eliminar</button>
         </li>

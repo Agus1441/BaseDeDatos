@@ -1,10 +1,10 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route} from 'react-router-dom';
-import Home from './components/home/Home'
-import InstructorManagement from './components/instructorManagement/InstructorManagement';
-import ActivityManagement from './components/ActivityManagement/ActivityManagement';
-import StudentManagement from './components/studentManagement/StudentManagement';
-import ClassManagement from './components/classManagement/ClassManagement';
+import Home from './components/admin/home/Home'
+import InstructorManagement from './components/admin/instructorManagement/InstructorManagement';
+import ActivityManagement from './components/admin/activityManagement/ActivityManagement';
+import StudentManagement from './components/admin/studentManagement/StudentManagement';
+import ClassManagement from './components/admin/classManagement/ClassManagement';
 import Login from './components/login/Login';
 import RegisterAdmin from './components/register/Register';
 import StudentPage from './components/studentPage/StudentPage';
