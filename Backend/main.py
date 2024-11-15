@@ -12,22 +12,33 @@ swagger = Swagger(app)
 # Configuración de la base de datos
 config_db = {
     'user': 'root',
-    'password': 'rootpassword',
-    'host': '127.0.0.1',
-    'database': 'EscuelaNieve'
+    'password': 'root_password',
+    'host': 'mysql',
+    'database': 'escuela_nieve'
 }
 
-# Conectar a la base de datos
-def get_db_connection():
+#Endpoint Inicial
+@app.route('/')
+def index():
+    return "API de Escuela de Nieve funcionando"
+
+#Endpoint para Mostrar las Tablas de la Base de Datos
+@app.route('/tablas', methods=['GET'])
+def listar_tablas():
+    """
+    Listar tablas de la base de datos
+    """
+    conn = mysql.connector.connect(**config_db)
+    cursor = conn.cursor()
     try:
-        connection = mysql.connector.connect(**config_db)
-        return connection
-    except Error as e:
-        print("Error al conectar a la base de datos:", e)
-        return None
-
-
-
+        cursor.execute("SHOW TABLES")
+        tablas = cursor.fetchall()
+        return jsonify({'tablas': [tabla[0] for tabla in tablas]})
+    except mysql.connector.Error as err:
+        return jsonify({'error': str(err)}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
 
 
@@ -1116,6 +1127,91 @@ def dar_de_baja_alumno():
     except mysql.connector.Error as err:
         conn.rollback()
         return jsonify({'error': str(err)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# Endpoint para Alquilar un Equipamiento
+@app.route('/alquiler', methods=['POST'])
+def alquilar_equipamiento():
+    """
+    Alquilar equipamiento para un alumno
+    ---
+    tags:
+      - Alquiler
+    parameters:
+      - name: ID_Alquiler
+        in: body
+        type: integer
+        required: true
+        description: ID del alquiler
+      - name: ID_Alumno
+        in: body
+        type: integer
+        required: true
+        description: ID del alumno que realiza el alquiler
+      - name: ID_Equipamiento
+        in: body
+        type: integer
+        required: true
+        description: ID del equipamiento a alquilar
+      - name: ID_Clase
+        in: body
+        type: integer
+        required: false
+        description: ID de la clase asociada al alquiler (puede ser NULL)
+      - name: fecha_inicio
+        in: body
+        type: string
+        format: date
+        required: true
+        description: Fecha de inicio del alquiler (YYYY-MM-DD)
+      - name: fecha_fin
+        in: body
+        type: string
+        format: date
+        required: true
+        description: Fecha de fin del alquiler (YYYY-MM-DD)
+    responses:
+      201:
+        description: Equipamiento alquilado exitosamente
+      400:
+        description: Datos incompletos o inválidos
+      500:
+        description: Error interno del servidor
+    """
+    data = request.json
+    id_alquiler = data.get('ID_Alquiler')
+    id_alumno = data.get('ID_Alumno')
+    id_equipamiento = data.get('ID_Equipamiento')
+    id_clase = data.get('ID_Clase')
+    fecha_inicio = data.get('fecha_inicio')
+    fecha_fin = data.get('fecha_fin')
+
+    # Validar que todos los campos obligatorios estén presentes
+    if not (id_alquiler and id_alumno and id_equipamiento and fecha_inicio and fecha_fin):
+        return jsonify({'error': 'Todos los campos obligatorios deben ser proporcionados'}), 400
+
+    # Validar que fecha_inicio sea anterior a fecha_fin
+    if fecha_inicio >= fecha_fin:
+        return jsonify({'error': 'La fecha de inicio debe ser anterior a la fecha de fin'}), 400
+
+    conn = mysql.connector.connect(**config_db)
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(
+            "INSERT INTO Alquiler (ID_Alquiler, ID_Alumno, ID_Equipamiento, ID_Clase, fecha_inicio, fecha_fin) "
+            "VALUES (%s, %s, %s, %s, %s, %s)",
+            (id_alquiler, id_alumno, id_equipamiento, id_clase, fecha_inicio, fecha_fin)
+        )
+        conn.commit()
+        return jsonify({'message': 'Equipamiento alquilado exitosamente'}), 201
+
+    except mysql.connector.Error as err:
+        conn.rollback()
+        return jsonify({'error': str(err)}), 500
+
     finally:
         cursor.close()
         conn.close()

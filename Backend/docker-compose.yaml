@@ -1,16 +1,18 @@
 version: '3.8'
 
 services:
-  db:
+  mysql:
     image: mysql:5.7
     container_name: escuela_nieve_db
+    restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: EscuelaNieve
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: escuela_nieve
     ports:
-      - '3306:3306'
+      - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./SQL:/docker-entrypoint-initdb.d
 
   flask_app:
     build: .
@@ -19,7 +21,7 @@ services:
       - FLASK_APP=main.py
       - FLASK_ENV=development
     depends_on:
-      - db
+      - mysql
     ports:
       - '5000:5000'
     volumes:
