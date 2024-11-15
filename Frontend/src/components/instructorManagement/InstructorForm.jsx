@@ -1,13 +1,27 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
+// Mock function to simulate existing CIs check
+const existingCIs = ['12345678', '87654321']; // Replace with a backend call in a real app
+
+const isUniqueCI = (ci) => {
+  return !existingCIs.includes(ci);
+};
+
 const InstructorForm = ({ onSubmit, instructorData }) => {
   const [name, setName] = useState(instructorData?.name || '');
-  const [email, setEmail] = useState(instructorData?.email || '');
+  const [lastName, setLastName] = useState(instructorData?.lastName || '');
+  const [ci, setCI] = useState(instructorData?.ci || '');
+  const [error, setError] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit({ name, email });
+    if (!isUniqueCI(ci)) {
+      setError('El CI ya está en uso. Por favor, ingrese un CI diferente.');
+      return;
+    }
+    setError('');
+    onSubmit({ name, ci });
   };
 
   return (
@@ -22,16 +36,26 @@ const InstructorForm = ({ onSubmit, instructorData }) => {
         />
       </div>
       <div>
-        <label>Correo Electrónico:</label>
+        <label>Apellido:</label>
         <input 
-          type="email" 
-          value={email} 
-          onChange={(e) => setEmail(e.target.value)} 
+          type="text" 
+          value={lastName} 
+          onChange={(e) => setLastName(e.target.value)} 
           required 
         />
       </div>
+      <div>
+        <label>CI:</label>
+        <input 
+          type="text" 
+          value={ci} 
+          onChange={(e) => setCI(e.target.value)} 
+          required 
+        />
+      </div>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
       <button type="submit">Guardar</button>
-      <Link to="/">Volver</Link>
+      <Link to="/home"><button>Volver</button></Link>
     </form>
   );
 };

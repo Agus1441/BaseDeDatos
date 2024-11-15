@@ -23,7 +23,7 @@ const ActivityManagement = () => {
           </li>
         ))}
       </ul>
-      <Link to="/">
+      <Link to="/home">
       <button>Volver</button>
       </Link>
     </div>

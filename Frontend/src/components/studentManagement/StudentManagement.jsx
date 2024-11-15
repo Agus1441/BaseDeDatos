@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import StudentForm from './StudentForm';
+import StudentList from './StudentList';
 
 const StudentManagement = () => {
   const [students, setStudents] = useState([]);
@@ -25,13 +26,8 @@ const StudentManagement = () => {
   return (
     <div>
       <h2>Gestión de Alumnos</h2>
-      {/* Similar al formulario de instructores, crea un StudentForm */}
-      <button>Agregar funcionalidad de formulario</button>
-      <table>
-        {/* Similar a la lista de instructores */}
-        <button>Agregar funcionalidad de lista</button>
-      </table>
-      <Link to="/">Volver</Link>
+      <StudentForm onSubmit={handleAddOrEditStudent} studentData={editingStudent}/>
+      <StudentList students={students} onDelete={handleDelete} onEdit={handleEdit}/>
     </div>
   );
 };

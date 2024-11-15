@@ -9,7 +9,7 @@ const InstructorManagement = () => {
   const handleAddOrEditInstructor = (instructor) => {
     if (editingInstructor) {
       setInstructors(instructors.map((inst) => 
-        inst.email === editingInstructor.email ? instructor : inst
+        inst.ci === editingInstructor.ci ? instructor : inst
       ));
     } else {
       setInstructors([...instructors, instructor]);
@@ -22,7 +22,7 @@ const InstructorManagement = () => {
   };
 
   const handleDelete = (instructor) => {
-    setInstructors(instructors.filter((inst) => inst.email !== instructor.email));
+    setInstructors(instructors.filter((inst) => inst.ci !== instructor.ci));
   };
 
   return (

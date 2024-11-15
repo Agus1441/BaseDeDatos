@@ -4,6 +4,8 @@ import Home from './components/home/Home'
 import InstructorManagement from './components/instructorManagement/InstructorManagement';
 import ActivityManagement from './components/ActivityManagement/ActivityManagement';
 import StudentManagement from './components/studentManagement/StudentManagement';
+import Login from './components/login/Login';
+import RegisterAdmin from './components/register/Register';
 import './App.css'
 
 const App = () => {
@@ -11,7 +13,9 @@ const App = () => {
     <Router>
       <div className='App'>
         <Routes>
-          <Route path="/" element={<Home/>} />
+          <Route path="/" element={<Login/>}></Route>
+          <Route path="/register" element={<RegisterAdmin/>}></Route>
+          <Route path="/home" element={<Home/>} />
           <Route path="/activities" element={<ActivityManagement/>} />
           <Route path="/instructors" element={<InstructorManagement/>} />
           <Route path="/students" element={<StudentManagement/>} />
