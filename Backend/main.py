@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, session
 from flasgger import Swagger
+from datetime import datetime
 import mysql.connector
 import hashlib
 import secrets
@@ -711,6 +712,211 @@ def registro():
 
 
 
+
+
+
+
+# ========== Endpoints para Clases ============
+
+# Función para verificar solapamiento de horarios y fechas
+def verificar_solapamiento(instructor_id, turno_id, fecha_inicio, fecha_fin):
+    conn = mysql.connector.connect(**config_db)
+    cursor = conn.cursor(dictionary=True)
+    query = """
+        SELECT c.Fecha_inicio, c.Fecha_fin, t.hora_inicio, t.hora_fin
+        FROM Clases c
+        JOIN Turnos t ON c.ID_Turno = t.ID
+        WHERE c.CI_Instructor = %s
+          AND c.ID_Turno = %s
+          AND ((%s BETWEEN c.Fecha_inicio AND c.Fecha_fin)
+            OR (%s BETWEEN c.Fecha_inicio AND c.Fecha_fin)
+            OR (c.Fecha_inicio BETWEEN %s AND %s))
+    """
+    cursor.execute(query, (instructor_id, turno_id, fecha_inicio, fecha_fin, fecha_inicio, fecha_fin))
+    solapamiento = cursor.fetchone() is not None
+    cursor.close()
+    conn.close()
+    return solapamiento
+
+# Alta de Clase
+@app.route('/clases', methods=['POST'])
+def crear_clase():
+    """
+    Crear una nueva clase
+    ---
+    tags:
+      - Clases
+    parameters:
+      - name: CI_Instructor
+        in: body
+        type: integer
+        required: true
+        description: CI del instructor
+      - name: ID_Actividad
+        in: body
+        type: integer
+        required: true
+        description: ID de la actividad
+      - name: ID_Turno
+        in: body
+        type: integer
+        required: true
+        description: ID del turno
+      - name: Cupos
+        in: body
+        type: integer
+        required: true
+        description: Número de cupos disponibles
+      - name: Fecha_inicio
+        in: body
+        type: string
+        format: date
+        required: true
+        description: Fecha de inicio (YYYY-MM-DD)
+      - name: Fecha_fin
+        in: body
+        type: string
+        format: date
+        required: true
+        description: Fecha de fin (YYYY-MM-DD)
+    responses:
+      201:
+        description: Clase creada exitosamente
+      409:
+        description: Conflicto de horarios para el instructor en ese turno
+    """
+    data = request.json
+    instructor_id = data.get('CI_Instructor')
+    actividad_id = data.get('ID_Actividad')
+    turno_id = data.get('ID_Turno')
+    cupos = data.get('Cupos')
+    fecha_inicio = data.get('Fecha_inicio')
+    fecha_fin = data.get('Fecha_fin')
+
+    if verificar_solapamiento(instructor_id, turno_id, fecha_inicio, fecha_fin):
+        return jsonify({'error': 'El instructor ya tiene una clase en ese turno y horario'}), 409
+
+    conn = mysql.connector.connect(**config_db)
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "INSERT INTO Clases (CI_Instructor, ID_Actividad, ID_Turno, Cupos, Fecha_inicio, Fecha_fin) VALUES (%s, %s, %s, %s, %s, %s)",
+            (instructor_id, actividad_id, turno_id, cupos, fecha_inicio, fecha_fin)
+        )
+        conn.commit()
+        return jsonify({'message': 'Clase creada exitosamente'}), 201
+    except mysql.connector.Error as err:
+        conn.rollback()
+        return jsonify({'error': str(err)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# Baja de Clase
+@app.route('/clases/<int:clase_id>', methods=['DELETE'])
+def eliminar_clase(clase_id):
+    """
+    Eliminar una clase
+    ---
+    tags:
+      - Clases
+    parameters:
+      - name: clase_id
+        in: path
+        type: integer
+        required: true
+        description: ID de la clase a eliminar
+    responses:
+      200:
+        description: Clase eliminada exitosamente
+      403:
+        description: La clase no puede eliminarse en el horario actual
+    """
+    conn = mysql.connector.connect(**config_db)
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT Fecha_inicio, Fecha_fin FROM Clases WHERE ID = %s", (clase_id,))
+    clase = cursor.fetchone()
+    if not clase:
+        return jsonify({'error': 'Clase no encontrada'}), 404
+
+    fecha_inicio = clase['Fecha_inicio']
+    fecha_fin = clase['Fecha_fin']
+    ahora = datetime.now().date()
+
+    if fecha_inicio <= ahora <= fecha_fin:
+        return jsonify({'error': 'La clase no puede eliminarse en el horario actual'}), 403
+
+    cursor.execute("DELETE FROM Clases WHERE ID = %s", (clase_id,))
+    conn.commit()
+    return jsonify({'message': 'Clase eliminada exitosamente'}), 200
+
+# Modificación de Clase
+@app.route('/clases/<int:clase_id>', methods=['PUT'])
+def modificar_clase(clase_id):
+    """
+    Modificar una clase existente
+    ---
+    tags:
+      - Clases
+    parameters:
+      - name: clase_id
+        in: path
+        type: integer
+        required: true
+        description: ID de la clase a modificar
+      - name: CI_Instructor
+        in: body
+        type: integer
+        description: CI del nuevo instructor
+      - name: ID_Turno
+        in: body
+        type: integer
+        description: ID del nuevo turno
+    responses:
+      200:
+        description: Clase modificada exitosamente
+      403:
+        description: La clase no puede modificarse en el horario actual
+      409:
+        description: Conflicto de horarios para el instructor en el nuevo turno
+    """
+    data = request.json
+    nuevo_instructor = data.get('CI_Instructor')
+    nuevo_turno = data.get('ID_Turno')
+
+    conn = mysql.connector.connect(**config_db)
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT Fecha_inicio, Fecha_fin FROM Clases WHERE ID = %s", (clase_id,))
+    clase = cursor.fetchone()
+    if not clase:
+        return jsonify({'error': 'Clase no encontrada'}), 404
+
+    fecha_inicio = clase['Fecha_inicio']
+    fecha_fin = clase['Fecha_fin']
+    ahora = datetime.now().date()
+
+    if fecha_inicio <= ahora <= fecha_fin:
+        return jsonify({'error': 'La clase no puede modificarse en el horario actual'}), 403
+
+    if nuevo_instructor and nuevo_turno and verificar_solapamiento(nuevo_instructor, nuevo_turno, fecha_inicio, fecha_fin):
+        return jsonify({'error': 'El instructor ya tiene una clase en ese turno y horario'}), 409
+
+    query = "UPDATE Clases SET CI_Instructor = %s, ID_Turno = %s WHERE ID = %s"
+    cursor.execute(query, (nuevo_instructor, nuevo_turno, clase_id))
+    conn.commit()
+    return jsonify({'message': 'Clase modificada exitosamente'}), 200
+
+
+
+
+
+
+
+
+
+
 # ========== Otros Endpoints ===========
 
 # Modificación de Actividad
@@ -766,8 +972,153 @@ def modificar_actividad(id_actividad):
         cursor.close()
         connection.close()
 
+# Endpoint para inscribir a un alumno a una clase
+@app.route('/inscribir', methods=['POST'])
+def inscribir_alumno():
+    """
+    Inscribir a un alumno en una clase
+    ---
+    tags:
+      - Inscripciones
+    parameters:
+      - name: ID_Alumno
+        in: body
+        type: integer
+        required: true
+        description: ID del alumno a inscribir
+      - name: ID_Clase
+        in: body
+        type: integer
+        required: true
+        description: ID de la clase a la que se quiere inscribir
+    responses:
+      201:
+        description: Alumno inscrito exitosamente en la clase
+      400:
+        description: Conflicto de horario o restricción de edad no cumplida
+      404:
+        description: Alumno o clase no encontrados
+      500:
+        description: Error interno del servidor
+    """
+    data = request.json
+    id_alumno = data.get('ID_Alumno')
+    id_clase = data.get('ID_Clase')
 
+    if not (id_alumno and id_clase):
+        return jsonify({'error': 'ID de alumno y clase son requeridos'}), 400
 
+    conn = mysql.connector.connect(**config_db)
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        # Obtener información de la clase
+        cursor.execute("SELECT * FROM Clases WHERE ID = %s", (id_clase,))
+        clase = cursor.fetchone()
+        if not clase:
+            return jsonify({'error': 'Clase no encontrada'}), 404
+
+        # Obtener información del alumno
+        cursor.execute("SELECT * FROM Alumnos WHERE CI = %s", (id_alumno,))
+        alumno = cursor.fetchone()
+        if not alumno:
+            return jsonify({'error': 'Alumno no encontrado'}), 404
+
+        # Calcular la edad del alumno
+        fecha_nacimiento = datetime.strptime(alumno['fecha_nacimiento'], '%Y-%m-%d')
+        edad_alumno = (datetime.now() - fecha_nacimiento).days // 365
+
+        # Verificar la restricción de edad
+        cursor.execute("SELECT edadRequerida FROM Actividades WHERE ID = %s", (clase['ID_Actividad'],))
+        actividad = cursor.fetchone()
+        if edad_alumno < actividad['edadRequerida']:
+            return jsonify({'error': 'El alumno no cumple con la restricción de edad para esta actividad'}), 400
+
+        # Verificar conflictos de horario
+        cursor.execute("""
+            SELECT C.Fecha_inicio, C.Fecha_fin, T.hora_inicio, T.hora_fin
+            FROM Alumno_clase AC
+            JOIN Clases C ON AC.ID_Clase = C.ID
+            JOIN Turnos T ON C.ID_Turno = T.ID
+            WHERE AC.ID_Alumno = %s AND (
+                (%s BETWEEN C.Fecha_inicio AND C.Fecha_fin OR %s BETWEEN C.Fecha_inicio AND C.Fecha_fin) AND
+                ((SELECT hora_inicio FROM Turnos WHERE ID = %s) < T.hora_fin AND 
+                (SELECT hora_fin FROM Turnos WHERE ID = %s) > T.hora_inicio)
+            )
+        """, (id_alumno, clase['Fecha_inicio'], clase['Fecha_fin'], clase['ID_Turno'], clase['ID_Turno']))
+
+        conflicto_horario = cursor.fetchone()
+        if conflicto_horario:
+            return jsonify({'error': 'Conflicto de horario: el alumno ya está inscrito en otra clase en el mismo horario'}), 400
+
+        # Inscribir al alumno en la clase
+        cursor.execute("INSERT INTO Alumno_clase (ID_Alumno, ID_Clase) VALUES (%s, %s)", (id_alumno, id_clase))
+        conn.commit()
+        return jsonify({'message': 'Alumno inscrito exitosamente en la clase'}), 201
+
+    except mysql.connector.Error as err:
+        conn.rollback()
+        return jsonify({'error': str(err)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# Endpoint para dar de baja a un alumno de una clase
+@app.route('/desinscribir', methods=['DELETE'])
+def dar_de_baja_alumno():
+    """
+    Dar de baja a un alumno de una clase
+    ---
+    tags:
+      - Inscripciones
+    parameters:
+      - name: ID_Alumno
+        in: body
+        type: integer
+        required: true
+        description: ID del alumno a dar de baja
+      - name: ID_Clase
+        in: body
+        type: integer
+        required: true
+        description: ID de la clase de la cual se quiere dar de baja al alumno
+    responses:
+      200:
+        description: Alumno dado de baja exitosamente de la clase
+      404:
+        description: El alumno no está inscrito en esta clase
+      500:
+        description: Error interno del servidor
+    """
+    data = request.json
+    id_alumno = data.get('ID_Alumno')
+    id_clase = data.get('ID_Clase')
+
+    if not (id_alumno and id_clase):
+        return jsonify({'error': 'ID de alumno y clase son requeridos'}), 400
+
+    conn = mysql.connector.connect(**config_db)
+    cursor = conn.cursor()
+
+    try:
+        # Verificar que el alumno esté inscrito en la clase
+        cursor.execute("SELECT * FROM Alumno_clase WHERE ID_Alumno = %s AND ID_Clase = %s", (id_alumno, id_clase))
+        inscripcion = cursor.fetchone()
+        
+        if not inscripcion:
+            return jsonify({'error': 'El alumno no está inscrito en esta clase'}), 404
+
+        # Eliminar la inscripción del alumno en la clase
+        cursor.execute("DELETE FROM Alumno_clase WHERE ID_Alumno = %s AND ID_Clase = %s", (id_alumno, id_clase))
+        conn.commit()
+        return jsonify({'message': 'Alumno dado de baja exitosamente de la clase'}), 200
+
+    except mysql.connector.Error as err:
+        conn.rollback()
+        return jsonify({'error': str(err)}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
 
 
