@@ -17,10 +17,11 @@ const Login = ({ onLogin }) => {
 
     if (isAuthenticated && formData.role === 'admin') {
       navigate('/home'); // Redirige a la página de inicio si el usuario es un administrador
-    } else if (isAuthenticated) {
-      // Puedes manejar redirecciones para otros roles si es necesario
-      alert('Inicio de sesión exitoso');
-    } else {
+    } else if (isAuthenticated && formData.role === 'student') {
+      
+    } else if (isAuthenticated && formData.role === 'instructor') {
+      
+    }else {
       alert('Error de inicio de sesión. Verifique sus credenciales.');
     }
   };
