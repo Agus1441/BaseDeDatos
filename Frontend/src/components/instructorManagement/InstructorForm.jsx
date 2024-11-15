@@ -12,6 +12,7 @@ const InstructorForm = ({ onSubmit, instructorData }) => {
   const [name, setName] = useState(instructorData?.name || '');
   const [lastName, setLastName] = useState(instructorData?.lastName || '');
   const [ci, setCI] = useState(instructorData?.ci || '');
+  const [email, setEmail] = useState(instructorData?.email || '');
   const [error, setError] = useState('');
 
   const handleSubmit = (e) => {
@@ -26,6 +27,15 @@ const InstructorForm = ({ onSubmit, instructorData }) => {
 
   return (
     <form onSubmit={handleSubmit}>
+      <div>
+        <label>CI:</label>
+        <input 
+          type="text" 
+          value={ci} 
+          onChange={(e) => setCI(e.target.value)} 
+          required 
+        />
+      </div>
       <div>
         <label>Nombre:</label>
         <input 
@@ -45,11 +55,11 @@ const InstructorForm = ({ onSubmit, instructorData }) => {
         />
       </div>
       <div>
-        <label>CI:</label>
+        <label>Correo:</label>
         <input 
-          type="text" 
-          value={ci} 
-          onChange={(e) => setCI(e.target.value)} 
+          type="email" 
+          value={email} 
+          onChange={(e) => setEmail(e.target.value)} 
           required 
         />
       </div>

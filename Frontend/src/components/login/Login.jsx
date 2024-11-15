@@ -38,27 +38,25 @@ const Login = ({ onLogin }) => {
             </select>
         </label>
         <label>
-            {formData.role === 'student' ? 'Gmail:' : 'CI:'}
+            Gmail:
             <input
-            type="text"
+            type="email"
             name="identifier"
             value={formData.identifier}
             onChange={handleChange}
             required
             />
         </label>
-        {formData.role === 'admin' && (
-            <label>
-            Contraseña:
-            <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-            />
-            </label>
-        )}
+        <label>
+          Contraseña:
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
+        </label>
         <button type="submit">Iniciar Sesión</button>
         </form>
         <p>No existe un administrador? Registra uno <Link to='register'>aqui</Link></p>
