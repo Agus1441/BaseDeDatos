@@ -9,6 +9,9 @@ const HomeStudent = () => {
         <Link to="/Inscripciones">
           <button>Ver y gestionar inscripciones</button>
         </Link>
+        <Link to="/Alquilar">
+          <button>Ver y gestionar alquileres</button>
+        </Link>
       </div>
     </div>
   );
