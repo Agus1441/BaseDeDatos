@@ -7,7 +7,8 @@ import StudentManagement from './components/admin/studentManagement/StudentManag
 import ClassManagement from './components/admin/classManagement/ClassManagement';
 import Login from './components/login/Login';
 import RegisterAdmin from './components/register/Register';
-import StudentPage from './components/studentPage/StudentPage';
+import HomeStudent from './components/student/homeStudent/HomeStudent';
+import InscriptionActivity from './components/student/inscriptionActivity/InscriptionActivity';
 import './App.css'
 
 const App = () => {
@@ -18,11 +19,12 @@ const App = () => {
           <Route path="/" element={<Login/>}></Route>
           <Route path="/register" element={<RegisterAdmin/>}></Route>
           <Route path="/home" element={<Home/>} />
+          <Route path="homeStudent" element={<HomeStudent/>}></Route>
           <Route path="/activities" element={<ActivityManagement/>} />
           <Route path="/instructors" element={<InstructorManagement/>} />
           <Route path="/students" element={<StudentManagement/>} />
           <Route path="/classes" element={<ClassManagement/>}/>
-          <Route path="/studentPage" element={<StudentPage/>}/>
+          <Route path="Inscripciones" element={<InscriptionActivity/>}/>
         </Routes>
       </div>
     </Router>
