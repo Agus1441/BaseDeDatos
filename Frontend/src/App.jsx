@@ -10,6 +10,9 @@ import RegisterAdmin from './components/register/Register';
 import HomeStudent from './components/student/homeStudent/HomeStudent';
 import InscriptionActivity from './components/student/inscriptionActivity/InscriptionActivity';
 import RentEquipment from './components/student/rentEquipment/RentEquipment';
+import ClassTurn from './components/admin/classTurn/ClassTurn';
+import ActivityImport from './components/admin/activityImport/ActivityImport';
+import StudentActivity from './components/admin/studentActivity/StudentActivity';
 import './App.css'
 
 const App = () => {
@@ -27,6 +30,9 @@ const App = () => {
           <Route path="/classes" element={<ClassManagement/>}/>
           <Route path="/Inscripciones" element={<InscriptionActivity/>}/>
           <Route path="/Alquilar" element={<RentEquipment/>}/>
+          <Route path="/TurnoClase" element={<ClassTurn/>}/>
+          <Route path="/ImporteActividad" element={<ActivityImport/>}/>
+          <Route path="/ActividadesEstudiante" element={<StudentActivity/>}/>
         </Routes>
       </div>
     </Router>

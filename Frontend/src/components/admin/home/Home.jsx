@@ -19,6 +19,15 @@ const Home = () => {
         <Link to="/classes">
           <button>Ver y gestionar clases</button>
         </Link>
+        <Link to="/TurnoClase">
+          <button>Ver las clases</button>
+        </Link>
+        <Link to="/ImporteActividad">
+          <button>Ver importe de actividad</button>
+        </Link>
+        <Link to="/ActividadesEstudiante">
+          <button>Atividades para Estudiantes</button>
+        </Link>
       </div>
     </div>
   );
