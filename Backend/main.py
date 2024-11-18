@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, session
+from flask_cors import CORS
 from flasgger import Swagger
 from datetime import datetime
 import mysql.connector
@@ -6,13 +7,14 @@ import hashlib
 import secrets
 
 app = Flask(__name__)
+CORS(app)
 app.secret_key = secrets.token_hex(16) 
 swagger = Swagger(app)
 
 # Configuración de la base de datos
 config_db = {
     'user': 'root',
-    'password': 'root_password',
+    'password': 'root',
     'host': 'mysql',
     'database': 'escuela_nieve'
 }

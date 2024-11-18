@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { getActividades, inscribir, desinscribir, getInscripciones } from '../../services/Services'; // Asegúrate de importar los servicios necesarios
 import { Link } from 'react-router-dom';
 
-
 const InscriptionActivity = () => {
   const [actividades, setActividades] = useState([]);
   const [inscripciones, setInscripciones] = useState([]);

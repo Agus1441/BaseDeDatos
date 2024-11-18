@@ -6,7 +6,7 @@ services:
     container_name: escuela_nieve_db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: escuela_nieve
     ports:
       - "3306:3306"
