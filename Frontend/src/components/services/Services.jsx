@@ -627,3 +627,54 @@ export const updateTurno = async (task) => {
         return null;
     }
 }
+
+export const getTurnosClases = async () => {
+    try {
+        const response = await fetch("http://localhost:5000/turnos/clases");
+        if (response.ok) {
+            let turnos = await response.json();
+            console.log(turnos);
+            return turnos;
+        } else {
+            console.error(`Error: ${response.status} ${response.statusText}`);
+            return null;
+        }
+    } catch (error) {
+        console.error("Error en la solicitud:", error);
+        return null;
+    }
+}
+
+export const getActividadesIngresos = async () => {
+    try {
+        const response = await fetch("http://localhost:5000/actividades/ingresos");
+        if (response.ok) {
+            let turnos = await response.json();
+            console.log(turnos);
+            return turnos;
+        } else {
+            console.error(`Error: ${response.status} ${response.statusText}`);
+            return null;
+        }
+    } catch (error) {
+        console.error("Error en la solicitud:", error);
+        return null;
+    }
+}
+
+export const getActividadesAlumnos = async () => {
+    try {
+        const response = await fetch("http://localhost:5000/actividades/alumnos");
+        if (response.ok) {
+            let turnos = await response.json();
+            console.log(turnos);
+            return turnos;
+        } else {
+            console.error(`Error: ${response.status} ${response.statusText}`);
+            return null;
+        }
+    } catch (error) {
+        console.error("Error en la solicitud:", error);
+        return null;
+    }
+}
