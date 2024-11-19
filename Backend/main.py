@@ -3,7 +3,6 @@ from flask_cors import CORS
 from flasgger import Swagger
 from datetime import datetime
 import mysql.connector
-import hashlib
 import secrets
 
 app = Flask(__name__)
@@ -108,15 +107,25 @@ def crear_instructor():
             apellido:
               type: string
               description: Apellido del instructor.
+            correo:
+              type: string
+              description: Correo electrónico del instructor.
+            contrasena:
+              type: string
+              description: Contraseña del instructor.
           required:
             - CI
             - nombre
             - apellido
+            - correo
+            - contrasena
     responses:
       201:
         description: Instructor creado exitosamente.
       400:
-        description: Error en la solicitud.
+        description: Error en la solicitud (datos faltantes, CI duplicado, etc.).
+      409:
+        description: El usuario ya existe con otro rol.
       500:
         description: Error interno del servidor.
     """
@@ -128,26 +137,60 @@ def crear_instructor():
     ci = data.get('CI')
     nombre = data.get('nombre')
     apellido = data.get('apellido')
+    correo = data.get('correo')
+    contrasena = data.get('contrasena')
 
-    if not all([ci, nombre, apellido]):
+    if not all([ci, nombre, apellido, correo, contrasena]):
         return jsonify({'error': 'Todos los campos son requeridos'}), 400
 
     conn = mysql.connector.connect(**config_db)
     cursor = conn.cursor()
+
     try:
+        # Verificar si el CI existe en alguna tabla
+        cursor.execute("SELECT rol FROM login WHERE CI = %s", (ci,))
+        login_entry = cursor.fetchone()
+
+        cursor.execute("SELECT * FROM instructores WHERE CI = %s", (ci,))
+        instructor_entry = cursor.fetchone()
+
+        if login_entry and instructor_entry:
+            return jsonify({'error': 'El instructor ya existe'}), 400
+
+        if login_entry and not instructor_entry:
+            # Borrar entrada de login si no está sincronizada
+            cursor.execute("DELETE FROM login WHERE CI = %s", (ci,))
+            conn.commit()
+            return jsonify({'error': 'El usuario estaba en login pero no como instructor, fue eliminado'}), 400
+
+        if not login_entry and instructor_entry:
+            # Borrar entrada de instructores si no está sincronizada
+            cursor.execute("DELETE FROM instructores WHERE CI = %s", (ci,))
+            conn.commit()
+            return jsonify({'error': 'El usuario estaba en instructores pero no en login, fue eliminado'}), 400
+
+        if login_entry and login_entry[3] != 'instructor':
+            return jsonify({'error': 'El CI ya está registrado con otro rol en login'}), 409
+
+        # Crear el instructor en ambas tablas
+        cursor.execute(
+            "INSERT INTO login (CI, correo, contrasena, rol) VALUES (%s, %s, %s, %s)",
+            (ci, correo, contrasena, 'instructor')
+        )
         cursor.execute(
             "INSERT INTO instructores (CI, nombre, apellido) VALUES (%s, %s, %s)",
             (ci, nombre, apellido)
         )
         conn.commit()
         return jsonify({'message': 'Instructor creado exitosamente'}), 201
+
     except mysql.connector.Error as err:
         conn.rollback()
         return jsonify({'error': str(err)}), 500
+
     finally:
         cursor.close()
         conn.close()
-
 
 # Baja de Instructor
 @app.route('/instructores/<int:ci>', methods=['DELETE'])
@@ -174,11 +217,26 @@ def eliminar_instructor(ci):
     conn = mysql.connector.connect(**config_db)
     cursor = conn.cursor()
     try:
+        # Verificar si el instructor existe en ambas tablas
+        cursor.execute("SELECT * FROM instructores WHERE CI = %s", (ci,))
+        instructor_entry = cursor.fetchone()
+
+        if not instructor_entry:
+            return jsonify({'error': 'Instructor no encontrado en la tabla instructores'}), 404
+
+        cursor.execute("SELECT * FROM login WHERE CI = %s AND rol = %s", (ci, 'instructor'))
+        login_entry = cursor.fetchone()
+
+        # Eliminar instructor de la tabla instructores
         cursor.execute("DELETE FROM instructores WHERE CI = %s", (ci,))
-        if cursor.rowcount == 0:
-            return jsonify({'error': 'Instructor no encontrado'}), 404
+
+        # Si el instructor está en login, eliminar también su entrada
+        if login_entry:
+            cursor.execute("DELETE FROM login WHERE CI = %s", (ci,))
+
         conn.commit()
         return jsonify({'message': 'Instructor eliminado exitosamente'}), 200
+
     except mysql.connector.Error as err:
         conn.rollback()
         return jsonify({'error': str(err)}), 500
@@ -566,6 +624,9 @@ def crear_alumno():
             telefono:
               type: string
               description: Teléfono de contacto del alumno
+            contrasena:
+              type: string
+              description: Contraseña para el acceso del alumno
           required:
             - CI
             - nombre
@@ -573,11 +634,14 @@ def crear_alumno():
             - fecha_nacimiento
             - correo
             - telefono
+            - contrasena
     responses:
       201:
         description: Alumno creado exitosamente
       400:
-        description: Campos requeridos no proporcionados
+        description: Error en los datos proporcionados
+      409:
+        description: Conflicto en los datos (e.g., CI con otro rol)
       500:
         description: Error interno del servidor
     """
@@ -586,25 +650,66 @@ def crear_alumno():
     if not isinstance(data, dict):
         return jsonify({'error': 'El cuerpo de la solicitud debe ser JSON válido'}), 400
 
+    # Extraer datos del cuerpo de la solicitud
     ci = data.get('CI')
     nombre = data.get('nombre')
     apellido = data.get('apellido')
     fecha_nacimiento = data.get('fecha_nacimiento')
     correo = data.get('correo')
     telefono = data.get('telefono')
+    contrasena = data.get('contrasena')
 
-    if not all([ci, nombre, apellido, fecha_nacimiento, correo, telefono]):
+    if not all([ci, nombre, apellido, fecha_nacimiento, correo, telefono, contrasena]):
         return jsonify({'error': 'Todos los campos son requeridos'}), 400
 
     conn = mysql.connector.connect(**config_db)
     cursor = conn.cursor()
+
     try:
+        # Verificar si el alumno ya existe en las tablas `alumnos` y `login`
+        cursor.execute("SELECT * FROM alumnos WHERE CI = %s", (ci,))
+        alumno_entry = cursor.fetchone()
+
+        cursor.execute("SELECT * FROM login WHERE CI = %s", (ci,))
+        login_entry = cursor.fetchone()
+
+        # Si está en ambas tablas, el alumno ya existe, se rechaza la solicitud
+        if alumno_entry and login_entry:
+            return jsonify({'error': 'El alumno ya existe en ambas tablas'}), 409
+
+        # Si está en una tabla pero no en la otra, eliminar la entrada inconsistente
+        if alumno_entry and not login_entry:
+            cursor.execute("DELETE FROM alumnos WHERE CI = %s", (ci,))
+            conn.commit()
+            return jsonify({'error': 'Datos inconsistentes: eliminado de alumnos. Reintente'}), 400
+
+        if login_entry and not alumno_entry:
+            cursor.execute("DELETE FROM login WHERE CI = %s", (ci,))
+            conn.commit()
+            return jsonify({'error': 'Datos inconsistentes: eliminado de login. Reintente'}), 400
+
+        # Si está en login con un rol diferente, no permitir crear al alumno
+        if login_entry and login_entry[3] != 'alumno': 
+            return jsonify({'error': 'El CI ya existe con un rol diferente en login'}), 409
+
+        # Crear entrada en la tabla `login`
         cursor.execute(
-            "INSERT INTO alumnos (CI, nombre, apellido, fecha_nacimiento, correo, telefono) VALUES (%s, %s, %s, %s, %s, %s)",
+            "INSERT INTO login (CI, correo, contrasena, rol) VALUES (%s, %s, %s, %s)",
+            (ci, correo, contrasena, 'alumno')
+        )
+
+        # Crear entrada en la tabla `alumnos`
+        cursor.execute(
+            """
+            INSERT INTO alumnos (CI, nombre, apellido, fecha_nacimiento, correo, telefono) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """,
             (ci, nombre, apellido, fecha_nacimiento, correo, telefono)
         )
+
         conn.commit()
         return jsonify({'message': 'Alumno creado exitosamente'}), 201
+
     except mysql.connector.Error as err:
         conn.rollback()
         return jsonify({'error': str(err)}), 500
@@ -637,17 +742,34 @@ def eliminar_alumno(ci):
     conn = mysql.connector.connect(**config_db)
     cursor = conn.cursor()
     try:
-        cursor.execute("DELETE FROM alumnos WHERE CI = %s", (ci,))
-        if cursor.rowcount == 0:
+        # Verificar si el alumno existe en ambas tablas
+        cursor.execute("SELECT * FROM alumnos WHERE CI = %s", (ci,))
+        alumno_entry = cursor.fetchone()
+
+        cursor.execute("SELECT * FROM login WHERE CI = %s AND rol = 'alumno'", (ci,))
+        login_entry = cursor.fetchone()
+
+        # Si el alumno no está en ambas tablas, retornar error
+        if not alumno_entry and not login_entry:
             return jsonify({'error': 'Alumno no encontrado'}), 404
+
+        # Eliminar entradas de las tablas correspondientes
+        if alumno_entry:
+            cursor.execute("DELETE FROM alumnos WHERE CI = %s", (ci,))
+
+        if login_entry:
+            cursor.execute("DELETE FROM login WHERE CI = %s AND rol = 'alumno'", (ci,))
+
         conn.commit()
         return jsonify({'message': 'Alumno eliminado exitosamente'}), 200
+
     except mysql.connector.Error as err:
         conn.rollback()
         return jsonify({'error': str(err)}), 500
     finally:
         cursor.close()
         conn.close()
+
 
 # Modificación de Alumno
 @app.route('/alumnos/<int:ci>', methods=['PUT'])
@@ -928,27 +1050,70 @@ def login():
     tags:
       - Autenticación
     parameters:
-      - name: correo
+      - name: body
         in: body
-        type: string
         required: true
-        description: Correo electrónico del usuario
-      - name: password
-        in: body
-        type: string
-        required: true
-        description: Contraseña del usuario
+        description: Credenciales del usuario
+        schema:
+          type: object
+          properties:
+            correo:
+              type: string
+              description: Correo electrónico del usuario
+              example: usuario@example.com
+            password:
+              type: string
+              description: Contraseña del usuario
+              example: "123456"
+          required:
+            - correo
+            - password
     responses:
       200:
         description: Inicio de sesión exitoso
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Login exitoso
+            rol:
+              type: string
+              example: admin
+            CI:
+              type: integer
+              example: 54321234
       401:
         description: Correo o contraseña incorrectos
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Correo o contraseña incorrectos
+      400:
+        description: Campos faltantes o inválidos
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Campos faltantes o inválidos
       500:
         description: Error interno del servidor
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Error interno del servidor
     """
     data = request.json
-    correo = data['correo']
-    password = hashlib.sha256(data['password'].encode()).hexdigest()
+    correo = data.get('correo')
+    password = data.get('password')
+
+    if not correo or not password:
+        return jsonify({'error': 'Campos faltantes o inválidos'}), 400
 
     # Conectar a la base de datos
     connection = mysql.connector.connect(**config_db)
@@ -961,16 +1126,16 @@ def login():
     if user:
         # Guardar datos en la sesión
         session['logged_in'] = True
-        session['user_id'] = user['ID_usuario']
+        session['user_ci'] = user['CI']
         session['user_role'] = user['rol']
 
         return jsonify({
             "message": "Login exitoso",
             "rol": user['rol'],
-            "ID_usuario": user['ID_usuario']
+            "CI": user['CI']
         })
     else:
-        return jsonify({"message": "Correo o contraseña incorrectos"}), 401
+        return jsonify({"error": "Correo o contraseña incorrectos"}), 401
 
 # Logout - Cierre de sesión
 @app.route('/logout', methods=['POST'])
@@ -998,39 +1163,72 @@ def registro():
     tags:
       - Autenticación
     parameters:
-      - name: correo
+      - name: body
         in: body
-        type: string
         required: true
-        description: Correo electrónico del nuevo usuario
-      - name: password
-        in: body
-        type: string
-        required: true
-        description: Contraseña del nuevo usuario
+        description: Datos del usuario administrativo a registrar
+        schema:
+          type: object
+          properties:
+            CI:
+              type: integer
+              description: Cédula de identidad del nuevo usuario
+              example: 55555555
+            correo:
+              type: string
+              description: Correo electrónico del nuevo usuario
+              example: admin@example.com
+            password:
+              type: string
+              description: Contraseña del nuevo usuario
+              example: "123456"
+          required:
+            - correo
+            - password
     responses:
       201:
         description: Registro exitoso
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Registro exitoso
       400:
         description: Correo ya registrado o campos requeridos no proporcionados
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: El correo ya está registrado
       500:
         description: Error interno del servidor
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Error interno del servidor
     """
     data = request.json
+    ci = data.get('CI')
     correo = data.get('correo')
     password = data.get('password')
     
-    if not correo or not password:
-        return jsonify({"message": "Correo y contraseña son requeridos"}), 400
-
-    # Cifrar la contraseña
-    password_hash = hashlib.sha256(password.encode()).hexdigest()
+    if not ci or not correo or not password:
+        return jsonify({"message": "CI, correo y contraseña son requeridos"}), 400
 
     # Conexión a la base de datos y consulta
     connection = mysql.connector.connect(**config_db)
     cursor = connection.cursor()
 
     try:
+        # Verificar si la cédula ya existe
+        cursor.execute("SELECT * FROM login WHERE CI = %s", (ci,))
+        if cursor.fetchone():
+            return jsonify({"message": "Esta cédula ya está registrada"}), 400
+
         # Verificar si el correo ya existe
         cursor.execute("SELECT * FROM login WHERE correo = %s", (correo,))
         if cursor.fetchone():
@@ -1038,9 +1236,9 @@ def registro():
 
         # Insertar el nuevo usuario administrativo
         cursor.execute("""
-            INSERT INTO login (correo, contrasena, rol)
-            VALUES (%s, %s, %s)
-        """, (correo, password_hash, 'administrativo'))
+            INSERT INTO login (CI, correo, contrasena, rol)
+            VALUES (%s, %s, %s, %s)
+        """, (ci, correo, password, 'administrativo'))
 
         connection.commit()
         return jsonify({"message": "Registro exitoso"}), 201
@@ -1052,7 +1250,6 @@ def registro():
     finally:
         cursor.close()
         connection.close()
-
 
 
 
@@ -1593,21 +1790,27 @@ def inscribir_alumno():
     tags:
       - Inscripciones
     parameters:
-      - name: ID_Alumno
+      - name: body
         in: body
-        type: integer
         required: true
-        description: ID del alumno a inscribir
-      - name: ID_Clase
-        in: body
-        type: integer
-        required: true
-        description: ID de la clase a la que se quiere inscribir
+        description: Datos para inscribir al alumno en una clase
+        schema:
+          type: object
+          properties:
+            ID_Alumno:
+              type: integer
+              description: ID del alumno (CI)
+            ID_Clase:
+              type: integer
+              description: ID de la clase
+          required:
+            - ID_Alumno
+            - ID_Clase
     responses:
       201:
         description: Alumno inscrito exitosamente en la clase
       400:
-        description: Conflicto de horario o restricción de edad no cumplida
+        description: Error en los datos o restricciones no cumplidas
       404:
         description: Alumno o clase no encontrados
       500:
@@ -1635,6 +1838,19 @@ def inscribir_alumno():
         alumno = cursor.fetchone()
         if not alumno:
             return jsonify({'error': 'Alumno no encontrado'}), 404
+
+        # Verificar que el alumno no esté inscrito en la clase
+        cursor.execute("SELECT * FROM alumno_clase WHERE ID_Alumno = %s AND ID_Clase = %s", (id_alumno, id_clase))
+        inscripcion = cursor.fetchone()
+        
+        if not inscripcion:
+            return jsonify({'error': 'El alumno ya está inscrito en esta clase'}), 400
+
+        # Verificar la restricción de cupos
+        cursor.execute("SELECT COUNT(*) AS inscriptos FROM alumno_clase WHERE ID_Clase = %s", (id_clase,))
+        inscriptos = cursor.fetchone()['inscriptos']
+        if inscriptos >= clase['Cupos']:
+            return jsonify({'error': 'No hay cupos disponibles en esta clase'}), 400
 
         # Calcular la edad del alumno
         fecha_nacimiento = datetime.strptime(alumno['fecha_nacimiento'], '%Y-%m-%d')
@@ -1684,19 +1900,27 @@ def dar_de_baja_alumno():
     tags:
       - Inscripciones
     parameters:
-      - name: ID_Alumno
+      - name: body
         in: body
-        type: integer
         required: true
-        description: ID del alumno a dar de baja
-      - name: ID_Clase
-        in: body
-        type: integer
-        required: true
-        description: ID de la clase de la cual se quiere dar de baja al alumno
+        description: Datos para dar de baja al alumno de una clase
+        schema:
+          type: object
+          properties:
+            ID_Alumno:
+              type: integer
+              description: ID del alumno (CI)
+            ID_Clase:
+              type: integer
+              description: ID de la clase
+          required:
+            - ID_Alumno
+            - ID_Clase
     responses:
       200:
         description: Alumno dado de baja exitosamente de la clase
+      400:
+        description: ID de alumno y clase son requeridos
       404:
         description: El alumno no está inscrito en esta clase
       500:
@@ -1741,38 +1965,35 @@ def alquilar_equipamiento():
     tags:
       - Alquiler
     parameters:
-      - name: ID_Alquiler
+      - name: body
         in: body
-        type: integer
         required: true
-        description: ID del alquiler
-      - name: ID_Alumno
-        in: body
-        type: integer
-        required: true
-        description: ID del alumno que realiza el alquiler
-      - name: ID_Equipamiento
-        in: body
-        type: integer
-        required: true
-        description: ID del equipamiento a alquilar
-      - name: ID_Clase
-        in: body
-        type: integer
-        required: false
-        description: ID de la clase asociada al alquiler (puede ser NULL)
-      - name: fecha_inicio
-        in: body
-        type: string
-        format: date
-        required: true
-        description: Fecha de inicio del alquiler (YYYY-MM-DD)
-      - name: fecha_fin
-        in: body
-        type: string
-        format: date
-        required: true
-        description: Fecha de fin del alquiler (YYYY-MM-DD)
+        description: Datos del alquiler
+        schema:
+          type: object
+          properties:
+            ID_Alumno:
+              type: integer
+              description: ID del alumno que realiza el alquiler
+            ID_Equipamiento:
+              type: integer
+              description: ID del equipamiento a alquilar
+            ID_Clase:
+              type: integer
+              description: ID de la clase asociada al alquiler (puede ser NULL)
+            fecha_inicio:
+              type: string
+              format: date
+              description: Fecha de inicio del alquiler (YYYY-MM-DD)
+            fecha_fin:
+              type: string
+              format: date
+              description: Fecha de fin del alquiler (YYYY-MM-DD)
+          required:
+            - ID_Alumno
+            - ID_Equipamiento
+            - fecha_inicio
+            - fecha_fin
     responses:
       201:
         description: Equipamiento alquilado exitosamente
@@ -1782,7 +2003,6 @@ def alquilar_equipamiento():
         description: Error interno del servidor
     """
     data = request.json
-    id_alquiler = data.get('ID_Alquiler')
     id_alumno = data.get('ID_Alumno')
     id_equipamiento = data.get('ID_Equipamiento')
     id_clase = data.get('ID_Clase')
@@ -1790,7 +2010,7 @@ def alquilar_equipamiento():
     fecha_fin = data.get('fecha_fin')
 
     # Validar que todos los campos obligatorios estén presentes
-    if not (id_alquiler and id_alumno and id_equipamiento and fecha_inicio and fecha_fin):
+    if not (id_alumno and id_equipamiento and fecha_inicio and fecha_fin):
         return jsonify({'error': 'Todos los campos obligatorios deben ser proporcionados'}), 400
 
     # Validar que fecha_inicio sea anterior a fecha_fin
@@ -1801,17 +2021,18 @@ def alquilar_equipamiento():
     cursor = conn.cursor()
 
     try:
+        # Insertar el alquiler en la base de datos
         cursor.execute(
-            "INSERT INTO alquiler (ID_Alquiler, ID_Alumno, ID_Equipamiento, ID_Clase, fecha_inicio, fecha_fin) "
-            "VALUES (%s, %s, %s, %s, %s, %s)",
-            (id_alquiler, id_alumno, id_equipamiento, id_clase, fecha_inicio, fecha_fin)
+            "INSERT INTO alquiler (ID_Alumno, ID_Equipamiento, ID_Clase, fecha_inicio, fecha_fin) "
+            "VALUES (%s, %s, %s, %s, %s)",
+            (id_alumno, id_equipamiento, id_clase, fecha_inicio, fecha_fin)
         )
         conn.commit()
         return jsonify({'message': 'Equipamiento alquilado exitosamente'}), 201
 
     except mysql.connector.Error as err:
         conn.rollback()
-        return jsonify({'error': str(err)}), 500
+        return jsonify({'error': f"Error en la base de datos: {str(err)}"}), 500
 
     finally:
         cursor.close()
