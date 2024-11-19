@@ -106,11 +106,11 @@ Asegúrate de tener instalado en tu máquina:
 ### Instalación
 1. Instala las dependencias 
    npm install
-   ```
+   
 
 2. Inicia el servidor de desarrollo:
    npm run dev
-   ```
+  
 ###Deciciones 
 
 La creación del Frontend fue programada en React Native por las siguientes razones:
