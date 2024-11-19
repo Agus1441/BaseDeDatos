@@ -44,7 +44,7 @@ const ActivityImport = () => {
                     {ingresos.map((ingreso, index) => (
                         <tr key={index}>
                             <td>{ingreso.actividad}</td>
-                            <td>{ingreso.ingresos}</td>
+                            <td>{ingreso.ingresos_totales}</td>
                         </tr>
                     ))}
                 </tbody>
