@@ -12,7 +12,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./SQL:/docker-entrypoint-initdb.d
+      - ./../ScriptsSQL:/docker-entrypoint-initdb.d
 
   flask_app:
     build: .

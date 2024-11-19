@@ -6,7 +6,7 @@ USE escuela_nieve;
 CREATE TABLE login (
     CI INT PRIMARY KEY,
     correo VARCHAR(255) UNIQUE NOT NULL,
-    contraseña VARCHAR(255) NOT NULL,
+    contrasena VARCHAR(255) NOT NULL,
     rol ENUM('alumno', 'instructor', 'administrativo') NOT NULL
 );
 

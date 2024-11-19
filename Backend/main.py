@@ -16,7 +16,8 @@ config_db = {
     'user': 'root',
     'password': 'root',
     'host': 'mysql',
-    'database': 'escuela_nieve'
+    'database': 'escuela_nieve',
+    'port': 3306
 }
 
 # Endpoint Inicial
@@ -91,35 +92,44 @@ def crear_instructor():
     tags:
       - Instructores
     parameters:
-      - name: CI
+      - name: body
         in: body
-        type: integer
         required: true
-        description: Cédula de identidad del instructor
-      - name: nombre
-        in: body
-        type: string
-        required: true
-        description: Nombre del instructor
-      - name: apellido
-        in: body
-        type: string
-        required: true
-        description: Apellido del instructor
+        description: Datos para crear un nuevo instructor.
+        schema:
+          type: object
+          properties:
+            CI:
+              type: integer
+              description: Cédula de identidad del instructor.
+            nombre:
+              type: string
+              description: Nombre del instructor.
+            apellido:
+              type: string
+              description: Apellido del instructor.
+          required:
+            - CI
+            - nombre
+            - apellido
     responses:
       201:
-        description: Instructor creado exitosamente
+        description: Instructor creado exitosamente.
       400:
-        description: Error en la solicitud
+        description: Error en la solicitud.
       500:
-        description: Error interno del servidor
+        description: Error interno del servidor.
     """
-    data = request.json
+    data = request.get_json()
+
+    if not isinstance(data, dict):
+        return jsonify({'error': 'El cuerpo de la solicitud debe ser JSON válido'}), 400
+
     ci = data.get('CI')
     nombre = data.get('nombre')
     apellido = data.get('apellido')
 
-    if not (ci and nombre and apellido):
+    if not all([ci, nombre, apellido]):
         return jsonify({'error': 'Todos los campos son requeridos'}), 400
 
     conn = mysql.connector.connect(**config_db)
@@ -137,6 +147,7 @@ def crear_instructor():
     finally:
         cursor.close()
         conn.close()
+
 
 # Baja de Instructor
 @app.route('/instructores/<int:ci>', methods=['DELETE'])
@@ -189,16 +200,20 @@ def modificar_instructor(ci):
         type: integer
         required: true
         description: Cédula de identidad del instructor
-      - name: nombre
+      - name: body
         in: body
-        type: string
         required: true
-        description: Nombre actualizado del instructor
-      - name: apellido
-        in: body
-        type: string
-        required: true
-        description: Apellido actualizado del instructor
+        description: Datos a actualizar del instructor
+        schema:
+          type: object
+          properties:
+            nombre:
+              type: string
+              description: Nombre actualizado del instructor
+            apellido:
+              type: string
+              description: Apellido actualizado del instructor
+          required: []
     responses:
       200:
         description: Instructor modificado exitosamente
@@ -209,7 +224,8 @@ def modificar_instructor(ci):
       500:
         description: Error interno del servidor
     """
-    data = request.json
+    data = request.get_json()
+
     nombre = data.get('nombre')
     apellido = data.get('apellido')
 
@@ -242,7 +258,6 @@ def modificar_instructor(ci):
     finally:
         cursor.close()
         conn.close()
-
 
 
 
@@ -303,18 +318,24 @@ def crear_turno():
     tags:
       - Turnos
     parameters:
-      - name: hora_inicio
+      - name: body
         in: body
-        type: string
-        format: time
         required: true
-        description: Hora de inicio del turno (HH:MM:SS)
-      - name: hora_fin
-        in: body
-        type: string
-        format: time
-        required: true
-        description: Hora de fin del turno (HH:MM:SS)
+        description: Datos para crear un nuevo turno.
+        schema:
+          type: object
+          properties:
+            hora_inicio:
+              type: string
+              format: time
+              description: Hora de inicio del turno (HH:MM:SS)
+            hora_fin:
+              type: string
+              format: time
+              description: Hora de fin del turno (HH:MM:SS)
+          required:
+            - hora_inicio
+            - hora_fin
     responses:
       201:
         description: Turno creado exitosamente
@@ -323,11 +344,15 @@ def crear_turno():
       500:
         description: Error interno del servidor
     """
-    data = request.json
+    data = request.get_json()
+
+    if not isinstance(data, dict):
+        return jsonify({'error': 'El cuerpo de la solicitud debe ser JSON válido'}), 400
+
     hora_inicio = data.get('hora_inicio')
     hora_fin = data.get('hora_fin')
 
-    if not (hora_inicio and hora_fin):
+    if not all([hora_inicio, hora_fin]):
         return jsonify({'error': 'Los campos hora_inicio y hora_fin son requeridos'}), 400
 
     conn = mysql.connector.connect(**config_db)
@@ -397,27 +422,34 @@ def modificar_turno(id):
         type: integer
         required: true
         description: ID del turno a modificar
-      - name: hora_inicio
+      - name: body
         in: body
-        type: string
-        format: time
-        description: Nueva hora de inicio del turno (HH:MM:SS)
-      - name: hora_fin
-        in: body
-        type: string
-        format: time
-        description: Nueva hora de fin del turno (HH:MM:SS)
+        required: true
+        description: Datos a actualizar del turno
+        schema:
+          type: object
+          properties:
+            hora_inicio:
+              type: string
+              format: time
+              description: Nueva hora de inicio del turno (HH:MM:SS)
+            hora_fin:
+              type: string
+              format: time
+              description: Nueva hora de fin del turno (HH:MM:SS)
+          required: []
     responses:
       200:
         description: Turno actualizado exitosamente
-      400:
-        description: Campos requeridos no proporcionados
       404:
         description: Turno no encontrado
+      400:
+        description: Error en la solicitud, parámetros incorrectos o incompletos
       500:
         description: Error interno del servidor
     """
-    data = request.json
+    data = request.get_json()
+    
     hora_inicio = data.get('hora_inicio')
     hora_fin = data.get('hora_fin')
 
@@ -450,7 +482,6 @@ def modificar_turno(id):
     finally:
         cursor.close()
         conn.close()
-
 
 
 
@@ -509,37 +540,39 @@ def crear_alumno():
     tags:
       - Alumnos
     parameters:
-      - name: CI
+      - name: body
         in: body
-        type: integer
         required: true
-        description: Cédula de identidad del alumno
-      - name: nombre
-        in: body
-        type: string
-        required: true
-        description: Nombre del alumno
-      - name: apellido
-        in: body
-        type: string
-        required: true
-        description: Apellido del alumno
-      - name: fecha_nacimiento
-        in: body
-        type: string
-        format: date
-        required: true
-        description: Fecha de nacimiento del alumno (YYYY-MM-DD)
-      - name: correo
-        in: body
-        type: string
-        required: true
-        description: Correo electrónico del alumno
-      - name: telefono
-        in: body
-        type: string
-        required: true
-        description: Teléfono de contacto del alumno
+        description: Datos del alumno a crear.
+        schema:
+          type: object
+          properties:
+            CI:
+              type: integer
+              description: Cédula de identidad del alumno
+            nombre:
+              type: string
+              description: Nombre del alumno
+            apellido:
+              type: string
+              description: Apellido del alumno
+            fecha_nacimiento:
+              type: string
+              format: date
+              description: Fecha de nacimiento del alumno (YYYY-MM-DD)
+            correo:
+              type: string
+              description: Correo electrónico del alumno
+            telefono:
+              type: string
+              description: Teléfono de contacto del alumno
+          required:
+            - CI
+            - nombre
+            - apellido
+            - fecha_nacimiento
+            - correo
+            - telefono
     responses:
       201:
         description: Alumno creado exitosamente
@@ -548,7 +581,11 @@ def crear_alumno():
       500:
         description: Error interno del servidor
     """
-    data = request.json
+    data = request.get_json()
+
+    if not isinstance(data, dict):
+        return jsonify({'error': 'El cuerpo de la solicitud debe ser JSON válido'}), 400
+
     ci = data.get('CI')
     nombre = data.get('nombre')
     apellido = data.get('apellido')
@@ -556,7 +593,7 @@ def crear_alumno():
     correo = data.get('correo')
     telefono = data.get('telefono')
 
-    if not (ci and nombre and apellido and fecha_nacimiento and correo and telefono):
+    if not all([ci, nombre, apellido, fecha_nacimiento, correo, telefono]):
         return jsonify({'error': 'Todos los campos son requeridos'}), 400
 
     conn = mysql.connector.connect(**config_db)
@@ -626,27 +663,30 @@ def modificar_alumno(ci):
         type: integer
         required: true
         description: Cédula de identidad del alumno a modificar
-      - name: nombre
+      - name: body
         in: body
-        type: string
-        description: Nuevo nombre del alumno
-      - name: apellido
-        in: body
-        type: string
-        description: Nuevo apellido del alumno
-      - name: fecha_nacimiento
-        in: body
-        type: string
-        format: date
-        description: Nueva fecha de nacimiento del alumno (YYYY-MM-DD)
-      - name: correo
-        in: body
-        type: string
-        description: Nuevo correo electrónico del alumno
-      - name: telefono
-        in: body
-        type: string
-        description: Nuevo teléfono de contacto del alumno
+        required: true
+        description: Datos a actualizar del alumno
+        schema:
+          type: object
+          properties:
+            nombre:
+              type: string
+              description: Nuevo nombre del alumno
+            apellido:
+              type: string
+              description: Nuevo apellido del alumno
+            fecha_nacimiento:
+              type: string
+              format: date
+              description: Nueva fecha de nacimiento del alumno (YYYY-MM-DD)
+            correo:
+              type: string
+              description: Nuevo correo electrónico del alumno
+            telefono:
+              type: string
+              description: Nuevo teléfono de contacto del alumno
+          required: []
     responses:
       200:
         description: Alumno actualizado exitosamente
@@ -657,7 +697,8 @@ def modificar_alumno(ci):
       500:
         description: Error interno del servidor
     """
-    data = request.json
+    data = request.get_json()
+    
     nombre = data.get('nombre')
     apellido = data.get('apellido')
     fecha_nacimiento = data.get('fecha_nacimiento')
@@ -702,7 +743,6 @@ def modificar_alumno(ci):
     finally:
         cursor.close()
         conn.close()
-
 
 
 
@@ -913,7 +953,7 @@ def login():
     # Conectar a la base de datos
     connection = mysql.connector.connect(**config_db)
     cursor = connection.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM login WHERE correo=%s AND contraseña=%s", (correo, password))
+    cursor.execute("SELECT * FROM login WHERE correo=%s AND contrasena=%s", (correo, password))
     user = cursor.fetchone()
     cursor.close()
     connection.close()
@@ -998,7 +1038,7 @@ def registro():
 
         # Insertar el nuevo usuario administrativo
         cursor.execute("""
-            INSERT INTO login (correo, contraseña, rol)
+            INSERT INTO login (correo, contrasena, rol)
             VALUES (%s, %s, %s)
         """, (correo, password_hash, 'administrativo'))
 
@@ -1072,8 +1112,8 @@ def verificar_solapamiento(instructor_id, turno_id, fecha_inicio, fecha_fin):
     cursor = conn.cursor(dictionary=True)
     query = """
         SELECT c.Fecha_inicio, c.Fecha_fin, t.hora_inicio, t.hora_fin
-        FROM Clases c
-        JOIN Turnos t ON c.ID_Turno = t.ID
+        FROM clases c
+        JOIN turnos t ON c.ID_Turno = t.ID
         WHERE c.CI_Instructor = %s
           AND c.ID_Turno = %s
           AND ((%s BETWEEN c.Fecha_inicio AND c.Fecha_fin)
@@ -1092,54 +1132,65 @@ def crear_clase():
     """
     Crear una nueva clase
     ---
-    tags:
+    tags: 
       - Clases
     parameters:
-      - name: CI_Instructor
+      - name: body
         in: body
-        type: integer
         required: true
-        description: CI del instructor
-      - name: ID_Actividad
-        in: body
-        type: integer
-        required: true
-        description: ID de la actividad
-      - name: ID_Turno
-        in: body
-        type: integer
-        required: true
-        description: ID del turno
-      - name: Cupos
-        in: body
-        type: integer
-        required: true
-        description: Número de cupos disponibles
-      - name: Fecha_inicio
-        in: body
-        type: string
-        format: date
-        required: true
-        description: Fecha de inicio (YYYY-MM-DD)
-      - name: Fecha_fin
-        in: body
-        type: string
-        format: date
-        required: true
-        description: Fecha de fin (YYYY-MM-DD)
+        description: Datos para crear una nueva clase.
+        schema:
+          type: object
+          properties:
+            CI_Instructor:
+              type: integer
+              description: CI del instructor.
+            ID_Actividad:
+              type: integer
+              description: ID de la actividad.
+            ID_Turno:
+              type: integer
+              description: ID del turno.
+            Cupos:
+              type: integer
+              description: Número de cupos disponibles.
+            Fecha_inicio:
+              type: string
+              format: date
+              description: Fecha de inicio de la clase (YYYY-MM-DD).
+            Fecha_fin:
+              type: string
+              format: date
+              description: Fecha de fin de la clase (YYYY-MM-DD).
+          required:
+            - CI_Instructor
+            - ID_Actividad
+            - ID_Turno
+            - Cupos
+            - Fecha_inicio
+            - Fecha_fin
     responses:
       201:
-        description: Clase creada exitosamente
+        description: Clase creada exitosamente.
+      400:
+        description: Error en los datos enviados.
       409:
-        description: Conflicto de horarios para el instructor en ese turno
+        description: Conflicto de horarios para el instructor en ese turno.
     """
-    data = request.json
+    data = request.get_json()
+
+    if not isinstance(data, dict):
+        return jsonify({'error': 'El cuerpo de la solicitud debe ser JSON válido'}), 400
+
     instructor_id = data.get('CI_Instructor')
     actividad_id = data.get('ID_Actividad')
     turno_id = data.get('ID_Turno')
     cupos = data.get('Cupos')
     fecha_inicio = data.get('Fecha_inicio')
     fecha_fin = data.get('Fecha_fin')
+
+    if not all([instructor_id, actividad_id, turno_id, cupos, fecha_inicio, fecha_fin]):
+        return jsonify({'error': 'Faltan campos requeridos en el JSON'}), 400
 
     if verificar_solapamiento(instructor_id, turno_id, fecha_inicio, fecha_fin):
         return jsonify({'error': 'El instructor ya tiene una clase en ese turno y horario'}), 409
@@ -1148,7 +1199,7 @@ def crear_clase():
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "INSERT INTO Clases (CI_Instructor, ID_Actividad, ID_Turno, Cupos, Fecha_inicio, Fecha_fin) VALUES (%s, %s, %s, %s, %s, %s)",
+            "INSERT INTO clases (CI_Instructor, ID_Actividad, ID_Turno, Cupos, Fecha_inicio, Fecha_fin) VALUES (%s, %s, %s, %s, %s, %s)",
             (instructor_id, actividad_id, turno_id, cupos, fecha_inicio, fecha_fin)
         )
         conn.commit()
@@ -1159,6 +1210,7 @@ def crear_clase():
     finally:
         cursor.close()
         conn.close()
+
 
 # Baja de Clase
 @app.route('/clases/<int:clase_id>', methods=['DELETE'])
@@ -1183,7 +1235,7 @@ def eliminar_clase(clase_id):
     conn = mysql.connector.connect(**config_db)
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT Fecha_inicio, Fecha_fin FROM Clases WHERE ID = %s", (clase_id,))
+    cursor.execute("SELECT Fecha_inicio, Fecha_fin FROM clases WHERE ID = %s", (clase_id,))
     clase = cursor.fetchone()
     if not clase:
         return jsonify({'error': 'Clase no encontrada'}), 404
@@ -1195,7 +1247,7 @@ def eliminar_clase(clase_id):
     if fecha_inicio <= ahora <= fecha_fin:
         return jsonify({'error': 'La clase no puede eliminarse en el horario actual'}), 403
 
-    cursor.execute("DELETE FROM Clases WHERE ID = %s", (clase_id,))
+    cursor.execute("DELETE FROM clases WHERE ID = %s", (clase_id,))
     conn.commit()
     return jsonify({'message': 'Clase eliminada exitosamente'}), 200
 
@@ -1213,14 +1265,20 @@ def modificar_clase(clase_id):
         type: integer
         required: true
         description: ID de la clase a modificar
-      - name: CI_Instructor
+      - name: body
         in: body
-        type: integer
-        description: CI del nuevo instructor
-      - name: ID_Turno
-        in: body
-        type: integer
-        description: ID del nuevo turno
+        required: true
+        description: Datos de la clase a actualizar
+        schema:
+          type: object
+          properties:
+            CI_Instructor:
+              type: integer
+              description: CI del nuevo instructor
+            ID_Turno:
+              type: integer
+              description: ID del nuevo turno
+          required: []
     responses:
       200:
         description: Clase modificada exitosamente
@@ -1228,15 +1286,21 @@ def modificar_clase(clase_id):
         description: La clase no puede modificarse en el horario actual
       409:
         description: Conflicto de horarios para el instructor en el nuevo turno
+      404:
+        description: Clase no encontrada
+      500:
+        description: Error interno del servidor
     """
-    data = request.json
+    data = request.get_json()
     nuevo_instructor = data.get('CI_Instructor')
     nuevo_turno = data.get('ID_Turno')
 
     conn = mysql.connector.connect(**config_db)
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT Fecha_inicio, Fecha_fin FROM Clases WHERE ID = %s", (clase_id,))
+    cursor.execute("SELECT Fecha_inicio, Fecha_fin FROM clases WHERE ID = %s", (clase_id,))
+
+    
     clase = cursor.fetchone()
     if not clase:
         return jsonify({'error': 'Clase no encontrada'}), 404
@@ -1245,17 +1309,37 @@ def modificar_clase(clase_id):
     fecha_fin = clase['Fecha_fin']
     ahora = datetime.now().date()
 
+    # Verificar que no se modifique una clase en el horario actual
     if fecha_inicio <= ahora <= fecha_fin:
         return jsonify({'error': 'La clase no puede modificarse en el horario actual'}), 403
 
+    # Verificar si el instructor tiene un conflicto de horarios
     if nuevo_instructor and nuevo_turno and verificar_solapamiento(nuevo_instructor, nuevo_turno, fecha_inicio, fecha_fin):
         return jsonify({'error': 'El instructor ya tiene una clase en ese turno y horario'}), 409
 
-    query = "UPDATE Clases SET CI_Instructor = %s, ID_Turno = %s WHERE ID = %s"
-    cursor.execute(query, (nuevo_instructor, nuevo_turno, clase_id))
-    conn.commit()
-    return jsonify({'message': 'Clase modificada exitosamente'}), 200
+    try:
 
+        query = "UPDATE clases SET "
+        values = []
+        if nuevo_instructor:
+            query += "CI_Instructor = %s, "
+            values.append(nuevo_instructor)
+        if nuevo_turno:
+            query += "ID_Turno = %s, "
+            values.append(nuevo_turno)
+        query = query.rstrip(', ')
+        query += " WHERE ID = %s"
+        values.append(clase_id)
+
+        cursor.execute(query, tuple(values))
+        conn.commit()
+        return jsonify({'message': 'Clase modificada exitosamente'}), 200
+    except mysql.connector.Error as err:
+        conn.rollback()
+        return jsonify({'error': f'Error interno del servidor: {str(err)}'}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
 
 
@@ -1541,13 +1625,13 @@ def inscribir_alumno():
 
     try:
         # Obtener información de la clase
-        cursor.execute("SELECT * FROM Clases WHERE ID = %s", (id_clase,))
+        cursor.execute("SELECT * FROM clases WHERE ID = %s", (id_clase,))
         clase = cursor.fetchone()
         if not clase:
             return jsonify({'error': 'Clase no encontrada'}), 404
 
         # Obtener información del alumno
-        cursor.execute("SELECT * FROM Alumnos WHERE CI = %s", (id_alumno,))
+        cursor.execute("SELECT * FROM alumnos WHERE CI = %s", (id_alumno,))
         alumno = cursor.fetchone()
         if not alumno:
             return jsonify({'error': 'Alumno no encontrado'}), 404
@@ -1557,7 +1641,7 @@ def inscribir_alumno():
         edad_alumno = (datetime.now() - fecha_nacimiento).days // 365
 
         # Verificar la restricción de edad
-        cursor.execute("SELECT edadRequerida FROM Actividades WHERE ID = %s", (clase['ID_Actividad'],))
+        cursor.execute("SELECT edadRequerida FROM actividades WHERE ID = %s", (clase['ID_Actividad'],))
         actividad = cursor.fetchone()
         if edad_alumno < actividad['edadRequerida']:
             return jsonify({'error': 'El alumno no cumple con la restricción de edad para esta actividad'}), 400
@@ -1565,13 +1649,13 @@ def inscribir_alumno():
         # Verificar conflictos de horario
         cursor.execute("""
             SELECT C.Fecha_inicio, C.Fecha_fin, T.hora_inicio, T.hora_fin
-            FROM Alumno_clase AC
-            JOIN Clases C ON AC.ID_Clase = C.ID
-            JOIN Turnos T ON C.ID_Turno = T.ID
+            FROM alumno_clase AC
+            JOIN clases C ON AC.ID_Clase = C.ID
+            JOIN turnos T ON C.ID_Turno = T.ID
             WHERE AC.ID_Alumno = %s AND (
                 (%s BETWEEN C.Fecha_inicio AND C.Fecha_fin OR %s BETWEEN C.Fecha_inicio AND C.Fecha_fin) AND
-                ((SELECT hora_inicio FROM Turnos WHERE ID = %s) < T.hora_fin AND 
-                (SELECT hora_fin FROM Turnos WHERE ID = %s) > T.hora_inicio)
+                ((SELECT hora_inicio FROM turnos WHERE ID = %s) < T.hora_fin AND 
+                (SELECT hora_fin FROM turnos WHERE ID = %s) > T.hora_inicio)
             )
         """, (id_alumno, clase['Fecha_inicio'], clase['Fecha_fin'], clase['ID_Turno'], clase['ID_Turno']))
 
@@ -1580,7 +1664,7 @@ def inscribir_alumno():
             return jsonify({'error': 'Conflicto de horario: el alumno ya está inscrito en otra clase en el mismo horario'}), 400
 
         # Inscribir al alumno en la clase
-        cursor.execute("INSERT INTO Alumno_clase (ID_Alumno, ID_Clase) VALUES (%s, %s)", (id_alumno, id_clase))
+        cursor.execute("INSERT INTO alumno_clase (ID_Alumno, ID_Clase) VALUES (%s, %s)", (id_alumno, id_clase))
         conn.commit()
         return jsonify({'message': 'Alumno inscrito exitosamente en la clase'}), 201
 
@@ -1630,14 +1714,14 @@ def dar_de_baja_alumno():
 
     try:
         # Verificar que el alumno esté inscrito en la clase
-        cursor.execute("SELECT * FROM Alumno_clase WHERE ID_Alumno = %s AND ID_Clase = %s", (id_alumno, id_clase))
+        cursor.execute("SELECT * FROM alumno_clase WHERE ID_Alumno = %s AND ID_Clase = %s", (id_alumno, id_clase))
         inscripcion = cursor.fetchone()
         
         if not inscripcion:
             return jsonify({'error': 'El alumno no está inscrito en esta clase'}), 404
 
         # Eliminar la inscripción del alumno en la clase
-        cursor.execute("DELETE FROM Alumno_clase WHERE ID_Alumno = %s AND ID_Clase = %s", (id_alumno, id_clase))
+        cursor.execute("DELETE FROM alumno_clase WHERE ID_Alumno = %s AND ID_Clase = %s", (id_alumno, id_clase))
         conn.commit()
         return jsonify({'message': 'Alumno dado de baja exitosamente de la clase'}), 200
 
@@ -1718,7 +1802,7 @@ def alquilar_equipamiento():
 
     try:
         cursor.execute(
-            "INSERT INTO Alquiler (ID_Alquiler, ID_Alumno, ID_Equipamiento, ID_Clase, fecha_inicio, fecha_fin) "
+            "INSERT INTO alquiler (ID_Alquiler, ID_Alumno, ID_Equipamiento, ID_Clase, fecha_inicio, fecha_fin) "
             "VALUES (%s, %s, %s, %s, %s, %s)",
             (id_alquiler, id_alumno, id_equipamiento, id_clase, fecha_inicio, fecha_fin)
         )
