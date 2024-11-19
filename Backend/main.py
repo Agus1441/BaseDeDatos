@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from flasgger import Swagger
-from datetime import datetime
+from datetime import datetime, date
 import mysql.connector
 import secrets
 
@@ -41,9 +41,6 @@ def listar_tablas():
     finally:
         cursor.close()
         conn.close()
-
-
-
 
 
 
@@ -320,10 +317,6 @@ def modificar_instructor(ci):
 
 
 
-
-
-
-
 # ========== Endpoints para Turnos ==========
 
 # Obtener todos los Turnos
@@ -540,11 +533,6 @@ def modificar_turno(id):
     finally:
         cursor.close()
         conn.close()
-
-
-
-
-
 
 
 
@@ -770,7 +758,6 @@ def eliminar_alumno(ci):
         cursor.close()
         conn.close()
 
-
 # Modificación de Alumno
 @app.route('/alumnos/<int:ci>', methods=['PUT'])
 def modificar_alumno(ci):
@@ -865,13 +852,6 @@ def modificar_alumno(ci):
     finally:
         cursor.close()
         conn.close()
-
-
-
-
-
-
-
 
 
 
@@ -1028,13 +1008,6 @@ def modificar_actividad(id_actividad):
     finally:
         cursor.close()
         connection.close()
-
-
-
-
-
-
-
 
 
 
@@ -1254,14 +1227,27 @@ def registro():
 
 
 
-
-
-
-
-
-
-
 # ========== Endpoints para Clases ============
+
+# Función para verificar solapamiento de horarios y fechas
+def verificar_solapamiento(instructor_id, turno_id, fecha_inicio, fecha_fin):
+    conn = mysql.connector.connect(**config_db)
+    cursor = conn.cursor(dictionary=True)
+    query = """
+        SELECT c.Fecha_inicio, c.Fecha_fin, t.hora_inicio, t.hora_fin
+        FROM clases c
+        JOIN turnos t ON c.ID_Turno = t.ID
+        WHERE c.CI_Instructor = %s
+          AND c.ID_Turno = %s
+          AND ((%s BETWEEN c.Fecha_inicio AND c.Fecha_fin)
+            OR (%s BETWEEN c.Fecha_inicio AND c.Fecha_fin)
+            OR (c.Fecha_inicio BETWEEN %s AND %s))
+    """
+    cursor.execute(query, (instructor_id, turno_id, fecha_inicio, fecha_fin, fecha_inicio, fecha_fin))
+    solapamiento = cursor.fetchone() is not None
+    cursor.close()
+    conn.close()
+    return solapamiento
 
 # Obtener todas las Clases
 @app.route('/clases', methods=['GET'])
@@ -1302,26 +1288,6 @@ def obtener_clases():
     connection.close()
 
     return jsonify([{'ID': row[0], 'CI_Instructor': row[1], 'ID_Actividad': row[2], 'ID_Turno': row[3], 'Cupos': row[4], 'Fecha_inicio': row[5], 'Fecha_fin': row[6]} for row in result])
-
-# Función para verificar solapamiento de horarios y fechas
-def verificar_solapamiento(instructor_id, turno_id, fecha_inicio, fecha_fin):
-    conn = mysql.connector.connect(**config_db)
-    cursor = conn.cursor(dictionary=True)
-    query = """
-        SELECT c.Fecha_inicio, c.Fecha_fin, t.hora_inicio, t.hora_fin
-        FROM clases c
-        JOIN turnos t ON c.ID_Turno = t.ID
-        WHERE c.CI_Instructor = %s
-          AND c.ID_Turno = %s
-          AND ((%s BETWEEN c.Fecha_inicio AND c.Fecha_fin)
-            OR (%s BETWEEN c.Fecha_inicio AND c.Fecha_fin)
-            OR (c.Fecha_inicio BETWEEN %s AND %s))
-    """
-    cursor.execute(query, (instructor_id, turno_id, fecha_inicio, fecha_fin, fecha_inicio, fecha_fin))
-    solapamiento = cursor.fetchone() is not None
-    cursor.close()
-    conn.close()
-    return solapamiento
 
 # Alta de Clase
 @app.route('/clases', methods=['POST'])
@@ -1407,7 +1373,6 @@ def crear_clase():
     finally:
         cursor.close()
         conn.close()
-
 
 # Baja de Clase
 @app.route('/clases/<int:clase_id>', methods=['DELETE'])
@@ -1537,13 +1502,6 @@ def modificar_clase(clase_id):
     finally:
         cursor.close()
         conn.close()
-
-
-
-
-
-
-
 
 
 
@@ -1771,14 +1729,6 @@ def ver_turnos_por_clases():
 
 
 
-
-
-
-
-
-
-
-
 # ========== Endpoints para Otras Operaciones ===========
 
 # Inscribir un alumno a una clase
@@ -1843,7 +1793,7 @@ def inscribir_alumno():
         cursor.execute("SELECT * FROM alumno_clase WHERE ID_Alumno = %s AND ID_Clase = %s", (id_alumno, id_clase))
         inscripcion = cursor.fetchone()
         
-        if not inscripcion:
+        if inscripcion:
             return jsonify({'error': 'El alumno ya está inscrito en esta clase'}), 400
 
         # Verificar la restricción de cupos
@@ -1853,8 +1803,8 @@ def inscribir_alumno():
             return jsonify({'error': 'No hay cupos disponibles en esta clase'}), 400
 
         # Calcular la edad del alumno
-        fecha_nacimiento = datetime.strptime(alumno['fecha_nacimiento'], '%Y-%m-%d')
-        edad_alumno = (datetime.now() - fecha_nacimiento).days // 365
+        fecha_nacimiento = alumno['fecha_nacimiento']
+        edad_alumno = (datetime.now().date() - fecha_nacimiento).days // 365
 
         # Verificar la restricción de edad
         cursor.execute("SELECT edadRequerida FROM actividades WHERE ID = %s", (clase['ID_Actividad'],))
@@ -2216,13 +2166,6 @@ def clases_dadas_por(ci_instructor):
     connection.close()
 
     return jsonify([{'ID': row[0], 'CI_Instructor': row[1], 'ID_Actividad': row[2], 'ID_Turno': row[3], 'Cupos': row[4], 'Fecha_inicio': row[5], 'Fecha_fin': row[6]} for row in result])
-
-
-
-
-
-
-
 
 
 
