@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { postAlquiler,getEquipamiento}  from '../../services/Services';// Importa el servicio actualizado
+import { postAlquiler, getEquipamientos}  from '../../services/Services';// Importa el servicio actualizado
 import { Link } from 'react-router-dom';
 
 const RentEquipment = () => {

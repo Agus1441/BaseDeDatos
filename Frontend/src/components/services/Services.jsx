@@ -1,4 +1,6 @@
-//Get Obtener todas las actividades.
+import { act } from "react";
+
+// Obtener todas las actividades.
 export const getActividades = async () => {
     try {
         const response = await fetch("http://localhost:5000/actividades");
@@ -17,14 +19,14 @@ export const getActividades = async () => {
 }
 
 //Put Modificar una actividad existente.
-export const updateActividad = async (task) => {
+export const updateActividad = async (data) => {
     try {
-        const response = await fetch(`http://localhost:5000/actividades/${task.id}`, {
+        const response = await fetch(`http://localhost:5000/actividades/${data.ID}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(task) // Use task directly here
+            body: JSON.stringify(data)
         });
 
         if (response.ok) {
@@ -42,18 +44,18 @@ export const updateActividad = async (task) => {
 }
 
 // Post Alquilar equipamiento para un alumno
-export const postAlquiler = async (task) => {
+export const postAlquiler = async (rentData) => {
     try {
         const response = await fetch("http://localhost:5000/alquiler", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(task) // Assuming alquiler contains the necessary data for the rental
+            body: JSON.stringify(rentData)
         });
 
+        let newAlquiler = await response.json();
         if (response.ok) {
-            let newAlquiler = await response.json();
             console.log(newAlquiler);
             return newAlquiler;
         } else {
@@ -85,14 +87,14 @@ export const getAlumnos = async () => {
 }
 
 // Post Crear un nuevo alumno
-export const postAlumnos = async (task) => {
+export const postAlumnos = async (studentData) => {
     try {
         const response = await fetch("http://localhost:5000/alumnos", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(task) // Assuming alquiler contains the necessary data for the rental
+            body: JSON.stringify(studentData)
         });
 
         if (response.ok) {
@@ -110,15 +112,9 @@ export const postAlumnos = async (task) => {
 }
 
 //Delete Eliminar un alumno por CI
-export const deleteAlumnos = async (task) => {
+export const deleteAlumnos = async (id) => {
     try {
-        const response = await fetch(`http://localhost:5000/alumnos/${task.ci}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(task) // Use task directly here
-        });
+        const response = await fetch(`http://localhost:5000/alumnos/${id}`, { method: 'DELETE' });
 
         if (response.ok) {
             let deleteAlumno = await response.json();
@@ -135,14 +131,14 @@ export const deleteAlumnos = async (task) => {
 }
 
 //Put Modificar datos de un alumno por CI
-export const updateAlumnos = async (task) => {
+export const updateAlumnos = async (studentData) => {
     try {
-        const response = await fetch(`http://localhost:5000/alumnos/${task.ci}`, {
+        const response = await fetch(`http://localhost:5000/alumnos/${studentData.CI}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(task) // Use task directly here
+            body: JSON.stringify(studentData)
         });
 
         if (response.ok) {
@@ -178,14 +174,14 @@ export const getClases = async () => {
 }
 
 // Post Crear un nueva clase
-export const postClases = async (task) => {
+export const postClases = async (classData) => {
     try {
         const response = await fetch("http://localhost:5000/clases", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(task) // Assuming alquiler contains the necessary data for the rental
+            body: JSON.stringify(classData)
         });
 
         if (response.ok) {
@@ -203,15 +199,9 @@ export const postClases = async (task) => {
 }
 
 //Delete Eliminar una clase por id
-export const deleteClase = async (task) => {
+export const deleteClase = async (classID) => {
     try {
-        const response = await fetch(`http://localhost:5000/clases/${task.id}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(task) // Use task directly here
-        });
+        const response = await fetch(`http://localhost:5000/clases/${classID}`, { method: 'DELETE' });
 
         if (response.ok) {
             let deleteClase = await response.json();
@@ -228,14 +218,14 @@ export const deleteClase = async (task) => {
 }
 
 //Put Modificar datos de una clase por id
-export const updateClase = async (task) => {
+export const updateClase = async (classData) => {
     try {
-        const response = await fetch(`http://localhost:5000/clases/${task.id}`, {
+        const response = await fetch(`http://localhost:5000/clases/${classData.ID}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(task) // Use task directly here
+            body: JSON.stringify(classData) // Use task directly here
         });
 
         if (response.ok) {
@@ -252,10 +242,10 @@ export const updateClase = async (task) => {
     }
 }
 
-//Get
-export const getClasesInstructor = async () => {
+//Obtener clases dadas por un instructor
+export const getClasesInstructor = async (CI_Instructor) => {
     try {
-        const response = await fetch(`http://localhost:5000/clases_instructor/${ci_instructor}`);
+        const response = await fetch(`http://localhost:5000/clases_instructor/${CI_Instructor}`);
         if (response.ok) {
             let claseInstructor = await response.json();
             console.log(claseInstructor);
@@ -270,15 +260,15 @@ export const getClasesInstructor = async () => {
     }
 }
 
-// Delete
-export const desinscribir = async (task) => {
+// Desinscribir un alumno de una clase
+export const desinscribir = async (data) => {
     try {
         const response = await fetch('http://localhost:5000//desinscribir', {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(task) // Use task directly here
+            body: JSON.stringify(data)
         });
 
         if (response.ok) {
@@ -295,15 +285,15 @@ export const desinscribir = async (task) => {
     }
 }
 
-// Post
-export const inscribir = async (task) => {
+// Inscribir un alumno en una clase
+export const inscribir = async (data) => {
     try {
         const response = await fetch('http://localhost:5000//inscribir', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(task) // Use task directly here
+            body: JSON.stringify(data)
         });
 
         if (response.ok) {
@@ -320,8 +310,8 @@ export const inscribir = async (task) => {
     }
 }
 
-//Get
-export const getInscripciones = async () => {
+//Obtener las inscripciones de un alumno
+export const getInscripciones = async (ci_alumno) => {
     try {
         const response = await fetch(`http://localhost:5000/clases_instructor/${ci_alumno}`);
         if (response.ok) {
@@ -338,7 +328,7 @@ export const getInscripciones = async () => {
     }
 }
 
-//Get Obtener todas los equipamientos.
+//Obtener todos los equipamientos.
 export const getEquipamientos = async () => {
     try {
         const response = await fetch("http://localhost:5000/equipamientos");
@@ -356,8 +346,8 @@ export const getEquipamientos = async () => {
     }
 }
 
-//Get Obtener todas los equipamiento.
-export const getEquipamiento = async () => {
+//Obtener todos los equipamientos requeridos para hacer una actividad.
+export const getEquipamientoRequerido = async (id_actividad) => {
     try {
         const response = await fetch(`http://localhost:5000/equipamientos/${id_actividad}`);
         if (response.ok) {
@@ -374,7 +364,7 @@ export const getEquipamiento = async () => {
     }
 }
 
-//Get
+//Obtener todos los instructores
 export const getInstructores = async () => {
     try {
         const response = await fetch("http://localhost:5000/instructores");
@@ -392,15 +382,15 @@ export const getInstructores = async () => {
     }
 }
 
-// Post
-export const postInstructor = async (task) => {
+//Crear nuevo instructor
+export const postInstructor = async (teacherData) => {
     try {
         const response = await fetch("http://localhost:5000/instructores", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(task) // Assuming alquiler contains the necessary data for the rental
+            body: JSON.stringify(teacherData)
         });
 
         if (response.ok) {
@@ -417,16 +407,10 @@ export const postInstructor = async (task) => {
     }
 }
 
-//Delete 
-export const deleteInstructor = async (task) => {
+//Borrar un instructor
+export const deleteInstructor = async (teacherCI) => {
     try {
-        const response = await fetch(`http://localhost:5000/instructores/${task.ci}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(task) // Use task directly here
-        });
+        const response = await fetch(`http://localhost:5000/instructores/${teacherCI}`, { method: 'DELETE' });
 
         if (response.ok) {
             let deleteInstructor = await response.json();
@@ -442,15 +426,15 @@ export const deleteInstructor = async (task) => {
     }
 }
 
-//Put 
-export const updateInstructor = async (task) => {
+//Modificar un instructor
+export const updateInstructor = async (teacherData) => {
     try {
-        const response = await fetch(`http://localhost:5000/instructores/${task.ci}`, {
+        const response = await fetch(`http://localhost:5000/instructores/${teacherData.CI}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(task) // Use task directly here
+            body: JSON.stringify(teacherData)
         });
 
         if (response.ok) {
@@ -467,22 +451,22 @@ export const updateInstructor = async (task) => {
     }
 }
 
-export const login = async (task) => {
+export const login = async (loginData) => {
     try {
         const response = await fetch("http://localhost:5000/login", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(task) // Assuming alquiler contains the necessary data for the rental
+            body: JSON.stringify(loginData)
         });
 
+        let login = await response.json();
         if (response.ok) {
-            let login = await response.json();
             console.log(login);
             return login;
         } else {
-            console.error(`Error: ${response.status} ${response.statusText}`);
+            console.error(`Error: ${login.message}`);
             return null;
         }
     } catch (error) {
@@ -491,22 +475,16 @@ export const login = async (task) => {
     }
 }
 
-export const logout = async (task) => {
+export const logout = async () => {
     try {
-        const response = await fetch("http://localhost:5000/logout", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(task) // Assuming alquiler contains the necessary data for the rental
-        });
-
+        localStorage.clear();
+        const response = await fetch("http://localhost:5000/logout", { method: 'POST' });
+        let logout = await response.json();
         if (response.ok) {
-            let logout = await response.json();
             console.log(logout);
             return logout;
         } else {
-            console.error(`Error: ${response.status} ${response.statusText}`);
+            console.error(`Error: ${logout.message}`);
             return null;
         }
     } catch (error) {
@@ -515,22 +493,22 @@ export const logout = async (task) => {
     }
 }
 
-export const registro = async (task) => {
+export const registro = async (registerData) => {
     try {
         const response = await fetch("http://localhost:5000/registro", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(task) // Assuming alquiler contains the necessary data for the rental
+            body: JSON.stringify(registerData)
         });
 
+        let registro = await response.json();
         if (response.ok) {
-            let registro = await response.json();
             console.log(registro);
             return registro;
         } else {
-            console.error(`Error: ${response.status} ${response.statusText}`);
+            console.error(registro.message);
             return null;
         }
     } catch (error) {
@@ -556,14 +534,14 @@ export const getTurnos = async () => {
     }
 }
 
-export const postTurnos = async (task) => {
+export const postTurnos = async (turnData) => {
     try {
         const response = await fetch("http://localhost:5000/turnos", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(task) // Assuming alquiler contains the necessary data for the rental
+            body: JSON.stringify(turnData)
         });
 
         if (response.ok) {
@@ -580,15 +558,9 @@ export const postTurnos = async (task) => {
     }
 }
 
-export const deleteTurno = async (task) => {
+export const deleteTurno = async (turnID) => {
     try {
-        const response = await fetch(`http://localhost:5000/turnos/${task.id}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(task) // Use task directly here
-        });
+        const response = await fetch(`http://localhost:5000/turnos/${turnID}`, { method: 'DELETE' });
 
         if (response.ok) {
             let deleteTurno = await response.json();
@@ -604,14 +576,14 @@ export const deleteTurno = async (task) => {
     }
 }
 
-export const updateTurno = async (task) => {
+export const updateTurno = async (turn) => {
     try {
-        const response = await fetch(`http://localhost:5000/turnos/${task.id}`, {
+        const response = await fetch(`http://localhost:5000/turnos/${turn.ID}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(task) // Use task directly here
+            body: JSON.stringify(turn)
         });
 
         if (response.ok) {
@@ -628,9 +600,16 @@ export const updateTurno = async (task) => {
     }
 }
 
-export const getTurnosClases = async () => {
+export const getTurnosClases = async (fechas) => {
     try {
-        const response = await fetch("http://localhost:5000/turnos/clases");
+        const queryParams = new URLSearchParams(fechas).toString();
+        const response = await fetch(`http://localhost:5000/turnos/clases?${queryParams}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+           
+        });
         if (response.ok) {
             let turnos = await response.json();
             console.log(turnos);
@@ -645,13 +624,19 @@ export const getTurnosClases = async () => {
     }
 }
 
-export const getActividadesIngresos = async () => {
+export const getActividadesIngresos = async (fechas) => {
     try {
-        const response = await fetch("http://localhost:5000/actividades/ingresos");
+        const queryParams = new URLSearchParams(fechas).toString();
+        const response = await fetch(`http://localhost:5000/actividades/ingresos?${queryParams}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
         if (response.ok) {
-            let turnos = await response.json();
-            console.log(turnos);
-            return turnos;
+            let actIngresos = await response.json();
+            console.log(actIngresos);
+            return actIngresos;
         } else {
             console.error(`Error: ${response.status} ${response.statusText}`);
             return null;
@@ -662,9 +647,15 @@ export const getActividadesIngresos = async () => {
     }
 }
 
-export const getActividadesAlumnos = async () => {
+export const getActividadesAlumnos = async (fechas) => {
     try {
-        const response = await fetch("http://localhost:5000/actividades/alumnos");
+        const queryParams = new URLSearchParams(fechas).toString();
+        const response = await fetch(`http://localhost:5000/actividades/alumnos?${queryParams}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
         if (response.ok) {
             let turnos = await response.json();
             console.log(turnos);

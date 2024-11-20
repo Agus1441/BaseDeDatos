@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import { login } from '../services/Services'
 
-const Login = ({ onLogin }) => {
-  const [formData, setFormData] = useState({ identifier: '', password: '', role: 'student' });
+const Login = () => {
+  const [formData, setFormData] = useState({ correo: '', password: ''});
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -13,15 +14,22 @@ const Login = ({ onLogin }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const isAuthenticated = await onLogin(formData); // Suponiendo que `onLogin` devuelve si la autenticación es correcta
+    const authData = await login(formData);
+    if (authData){
+      console.log(authData)
+      localStorage.setItem("CI", authData.CI);
+      localStorage.setItem("rol", authData.rol);
 
-    if (isAuthenticated && formData.role === 'admin') {
-      navigate('/home'); // Redirige a la página de inicio si el usuario es un administrador
-    } else if (isAuthenticated && formData.role === 'student') {
-      
-    } else if (isAuthenticated && formData.role === 'instructor') {
-      
-    }else {
+      if (authData.rol === 'administrativo') {
+        navigate('/home');
+      } else if (authData.rol === 'alumno') {
+        navigate('/homeStudent');
+      } else if (authData.rol === 'instructor') {
+        
+      }
+    }
+
+    else {
       alert('Error de inicio de sesión. Verifique sus credenciales.');
     }
   };
@@ -31,19 +39,11 @@ const Login = ({ onLogin }) => {
         <form onSubmit={handleSubmit}>
         <h2>Inicio de Sesión</h2>
         <label>
-            Rol:
-            <select name="role" value={formData.role} onChange={handleChange}>
-            <option value="student">Estudiante</option>
-            <option value="instructor">Instructor</option>
-            <option value="admin">Administrador</option>
-            </select>
-        </label>
-        <label>
             Gmail:
             <input
             type="email"
-            name="identifier"
-            value={formData.identifier}
+            name="correo"
+            value={formData.correo}
             onChange={handleChange}
             required
             />

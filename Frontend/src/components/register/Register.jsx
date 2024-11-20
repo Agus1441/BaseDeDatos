@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { registro } from '../services/Services';
 
-const RegisterAdmin = ({ onRegister }) => {
-  const [formData, setFormData] = useState({ email: '', password: '', role: 'admin' });
+const RegisterAdmin = () => {
+  const [formData, setFormData] = useState({ CI: 0, correo: '', password: ''});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -11,7 +12,7 @@ const RegisterAdmin = ({ onRegister }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onRegister(formData);
+    registro(formData);
   };
 
   return (
@@ -19,8 +20,12 @@ const RegisterAdmin = ({ onRegister }) => {
     <form onSubmit={handleSubmit}>
       <h2>Registro de Administrador</h2>
       <label>
+        CI:
+        <input type="number" name="CI" value={formData.CI} onChange={handleChange} required />
+      </label>
+      <label>
         Email:
-        <input type="email" name="email" value={formData.email} onChange={handleChange} required />
+        <input type="email" name="correo" value={formData.correo} onChange={handleChange} required />
       </label>
       <label>
         Contraseña:

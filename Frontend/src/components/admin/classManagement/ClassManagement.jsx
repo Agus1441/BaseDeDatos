@@ -1,26 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ClassForm from './ClassForm';
 import ClassList from './ClassList';
+import { getClases, postClases, deleteClase, updateClase } from '../../services/Services';
 
 const ClassManagement = () => {
   const [classes, setClasses] = useState([]);
   const [editingClass, setEditingClass] = useState(null);
+  const fetchClasses = async () => {
+    const fetchedClasses = await getClases();
+    if (fetchedClasses) {
+      setClasses(fetchedClasses);
+    }
+  };
 
-  const handleAddOrEditClass = (classData) => {
+  // Cargar clases al montar el componente
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  // Agregar o editar una clase
+  const handleAddOrEditClass = async (classData) => {
     if (editingClass) {
-      setClasses(classes.map((c) => (c.ci === editingClass.ci ? classData : c)));
+      await updateClase(classData);
+      fetchClasses();
     } else {
-      setClasses([...classes, classData]);
+      await postClases(classData);
+      fetchClasses();
     }
     setEditingClass(null);
   };
 
-  const handleEdit = (classData) => {
-    setEditingClass(classData);
+  // Eliminar una clase
+  const handleDelete = async (classID) => {
+    await deleteClase(classID);
+    fetchClasses();
   };
 
-  const handleDelete = (classData) => {
-    setClasses(classes.filter((c) => c.ci !== classData.ci));
+  const handleEdit = (classData) => {
+    setEditingClass(classData);
   };
 
   return (
