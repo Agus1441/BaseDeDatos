@@ -111,7 +111,7 @@ Asegúrate de tener instalado en tu máquina:
 2. Inicia el servidor de desarrollo:
    npm run dev
   
-###Deciciones 
+### Deciciones 
 
 La creación del Frontend fue programada en React Native por las siguientes razones:
 
