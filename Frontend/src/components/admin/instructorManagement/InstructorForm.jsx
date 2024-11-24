@@ -1,28 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-// Mock function to simulate existing CIs check
-const existingCIs = ['12345678', '87654321']; // Replace with a backend call in a real app
-
-const isUniqueCI = (ci) => {
-  return !existingCIs.includes(ci);
-};
-
 const InstructorForm = ({ onSubmit, instructorData }) => {
-  const [name, setName] = useState(instructorData?.name || '');
-  const [lastName, setLastName] = useState(instructorData?.lastName || '');
-  const [ci, setCI] = useState(instructorData?.ci || '');
-  const [email, setEmail] = useState(instructorData?.email || '');
-  const [error, setError] = useState('');
+  const [nombre, setNombre] = useState('');
+  const [apellido, setApellido] = useState('');
+  const [CI, setCI] = useState('');
+  const [correo, setCorreo] = useState('');
+  const [contrasena, setContrasena] = useState('');
+
+  // Sincronizar el estado del formulario con instructorData
+  useEffect(() => {
+    if (instructorData) {
+      setNombre(instructorData.nombre || '');
+      setApellido(instructorData.apellido || '');
+      setCI(instructorData.CI || '');
+      setCorreo(instructorData.correo || '');
+      setContrasena(instructorData.contrasena || '');
+    }
+  }, [instructorData]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!isUniqueCI(ci)) {
-      setError('El CI ya está en uso. Por favor, ingrese un CI diferente.');
-      return;
-    }
-    setError('');
-    onSubmit({ name, ci });
+    onSubmit({ CI, nombre, apellido, correo, contrasena });
+
+    // Limpiar formulario tras enviar
+    setCI('');
+    setNombre('');
+    setApellido('');
+    setCorreo('');
+    setContrasena('');
   };
 
   return (
@@ -31,7 +37,7 @@ const InstructorForm = ({ onSubmit, instructorData }) => {
         <label>CI:</label>
         <input 
           type="text" 
-          value={ci} 
+          value={CI} 
           onChange={(e) => setCI(e.target.value)} 
           required 
         />
@@ -40,8 +46,8 @@ const InstructorForm = ({ onSubmit, instructorData }) => {
         <label>Nombre:</label>
         <input 
           type="text" 
-          value={name} 
-          onChange={(e) => setName(e.target.value)} 
+          value={nombre} 
+          onChange={(e) => setNombre(e.target.value)} 
           required 
         />
       </div>
@@ -49,8 +55,8 @@ const InstructorForm = ({ onSubmit, instructorData }) => {
         <label>Apellido:</label>
         <input 
           type="text" 
-          value={lastName} 
-          onChange={(e) => setLastName(e.target.value)} 
+          value={apellido} 
+          onChange={(e) => setApellido(e.target.value)} 
           required 
         />
       </div>
@@ -58,14 +64,22 @@ const InstructorForm = ({ onSubmit, instructorData }) => {
         <label>Correo:</label>
         <input 
           type="email" 
-          value={email} 
-          onChange={(e) => setEmail(e.target.value)} 
+          value={correo} 
+          onChange={(e) => setCorreo(e.target.value)} 
           required 
         />
       </div>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <div>
+        <label>Contraseña:</label>
+        <input 
+          type="text" 
+          value={contrasena} 
+          onChange={(e) => setContrasena(e.target.value)} 
+          required 
+        />
+      </div>
       <button type="submit">Guardar</button>
-      <Link to="/home"><button>Volver</button></Link>
+      <Link to="/home"><button type="button">Volver</button></Link>
     </form>
   );
 };

@@ -1,17 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect} from 'react';
 import { Link } from 'react-router-dom';
 
 const StudentForm = ({ onSubmit, studentData }) => {
-  const [ci, setCI] = useState(studentData?.ci || '');
-  const [name, setName] = useState(studentData?.name || '');
-  const [lastName, setLastName] = useState(studentData?.lastName || '');
-  const [birthDate, setBirthDate] = useState(studentData?.birthDate || '');
-  const [email, setEmail] = useState(studentData?.email || '');
-  const [phoneNumber, setPhoneNumber] = useState(studentData?.phoneNumber || '');
+  const [CI, setCI] = useState(studentData?.CI || '');
+  const [nombre, setName] = useState(studentData?.nombre || '');
+  const [apellido, setLastName] = useState(studentData?.apellido || '');
+  const [fecha_nacimiento, setBirthDate] = useState(studentData?.fecha_nacimiento || '');
+  const [correo, setEmail] = useState(studentData?.correo || '');
+  const [telefono, setPhoneNumber] = useState(studentData?.telefono || '');
+  const [contrasena, setContrasena] = useState(studentData?.contrasena || '');
+
+  useEffect(() => {
+    if(studentData){
+      setName(studentData.nombre || '');
+      setLastName(studentData.apellido || '');
+      setCI(studentData.CI || '');
+      setEmail(studentData.correo || '');
+      setContrasena(studentData.contrasena || '');
+      setPhoneNumber(studentData.telefono || '');
+      setBirthDate(studentData.fecha_nacimiento || '');
+    }
+  }, [studentData])
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit({ ci, name, lastName, birthDate, email, phoneNumber });
+    onSubmit({ CI, nombre, apellido, fecha_nacimiento, correo, telefono, contrasena });
 
     setCI('');
     setName('');
@@ -19,6 +32,7 @@ const StudentForm = ({ onSubmit, studentData }) => {
     setBirthDate('');
     setEmail('');
     setPhoneNumber('');
+    setContrasena('');
   };
 
   return (
@@ -27,7 +41,7 @@ const StudentForm = ({ onSubmit, studentData }) => {
         <label>Ci:</label>
         <input 
           type="text" 
-          value={ci} 
+          value={CI} 
           onChange={(e) => setCI(e.target.value)} 
           required 
         />
@@ -36,7 +50,7 @@ const StudentForm = ({ onSubmit, studentData }) => {
         <label>Nombre:</label>
         <input 
           type="text" 
-          value={name} 
+          value={nombre} 
           onChange={(e) => setName(e.target.value)} 
           required 
         />
@@ -45,7 +59,7 @@ const StudentForm = ({ onSubmit, studentData }) => {
         <label>Apellido:</label>
         <input 
           type="text" 
-          value={lastName} 
+          value={apellido} 
           onChange={(e) => setLastName(e.target.value)} 
           required 
         />
@@ -54,7 +68,7 @@ const StudentForm = ({ onSubmit, studentData }) => {
         <label>Fecha de nacimiento:</label>
         <input 
           type="date" 
-          value={birthDate} 
+          value={fecha_nacimiento} 
           onChange={(e) => setBirthDate(e.target.value)} 
           required 
         />
@@ -63,7 +77,7 @@ const StudentForm = ({ onSubmit, studentData }) => {
         <label>Correo:</label>
         <input 
           type="email" 
-          value={email} 
+          value={correo} 
           onChange={(e) => setEmail(e.target.value)} 
           required 
         />
@@ -72,10 +86,19 @@ const StudentForm = ({ onSubmit, studentData }) => {
         <label>Teléfono:</label>
         <input 
           type="tel" 
-          value={phoneNumber} 
+          value={telefono} 
           onChange={(e) => setPhoneNumber(e.target.value)} 
           pattern="[0-9]{3}[0-9]{3}[0-9]{3}" 
           placeholder="123456789"
+          required 
+        />
+      </div>
+      <div>
+        <label>Contraseña:</label>
+        <input 
+          type="text" 
+          value={contrasena} 
+          onChange={(e) => setContrasena(e.target.value)} 
           required 
         />
       </div>

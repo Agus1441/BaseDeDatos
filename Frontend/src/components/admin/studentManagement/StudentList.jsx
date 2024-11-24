@@ -17,12 +17,12 @@ const StudentList = ({ students, onEdit, onDelete }) => {
       <tbody>
         {students.map((student, index) => (
           <tr key={index}>
-            <td>{student.ci}</td>
-            <td>{student.name}</td>
-            <td>{student.lastName}</td>
-            <td>{student.birthDate}</td>
-            <td>{student.email}</td>
-            <td>{student.phoneNumber}</td>
+            <td>{student.CI}</td>
+            <td>{student.nombre}</td>
+            <td>{student.apellido}</td>
+            <td>{student.fecha_nacimiento}</td>
+            <td>{student.correo}</td>
+            <td>{student.telefono}</td>
             <td>
               <button onClick={() => onEdit(student)}>Editar</button>
               <button onClick={() => onDelete(student)}>Eliminar</button>

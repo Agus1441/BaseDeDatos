@@ -1,16 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import StudentForm from './StudentForm';
 import StudentList from './StudentList';
+import { getAlumnos, postAlumnos, deleteAlumnos } from '../../services/Services';
 
 const StudentManagement = () => {
   const [students, setStudents] = useState([]);
   const [editingStudent, setEditingStudent] = useState(null);
 
-  const handleAddOrEditStudent = (student) => {
+  useEffect(() => {
+    const fetchStudents = async () => {
+        const alumnos = await getAlumnos();
+        if (alumnos) {
+            setStudents(alumnos); // Almacena los datos en el estado
+        } else {
+            setStudents("No se pudieron obtener los turnos.");
+        }
+    };
+
+    fetchStudents();
+}, []); // El array vacío asegura que solo se ejecute una vez al montar el componente
+
+
+  const handleAddOrEditStudent = async (student) => {
     if (editingStudent) {
-      setStudents(students.map((s) => (s.ci === editingStudent.ci ? student : s)));
+      setStudents(students.map((s) => (s.CI === editingStudent.CI ? student : s)));
+      fetchStudents();
     } else {
-      setStudents([...students, student]);
+      const nuevoAlumno = await postAlumnos(student)
+      if(nuevoAlumno){
+        setStudents([...students, nuevoAlumno]);
+      }
     }
     setEditingStudent(null);
   };
@@ -19,8 +38,14 @@ const StudentManagement = () => {
     setEditingStudent(student);
   };
 
-  const handleDelete = (student) => {
-    setStudents(students.filter((s) => s.ci !== student.ci));
+  const handleDelete = async (student) => {
+    const deleted = await deleteAlumnos(student.CI);
+    if(deleted){
+      setStudents(students.filter((s) => s.CI !== student.CI));
+    }else{
+      setError('Error al eliminar al estudiante.');
+    }
+    
   };
 
   return (
