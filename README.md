@@ -1,4 +1,4 @@
-```markdown
+
 # Proyecto Full-Stack: Gestión de Actividades - Escuela de Nieve
 
 Este proyecto es una aplicación full-stack diseñada para la gestión de actividades, instructores, estudiantes y usuarios en general en una escuela de nieve. Combina un backend robusto con un frontend intuitivo.
@@ -35,23 +35,15 @@ El frontend está desarrollado con **React.js** para ofrecer una interfaz intuit
 
 ---
 
-## Instrucciones para ejecutar el Backend
+# Instructivo para ejecución local
 
-Este proyecto implementa el backend para la administración de la escuela de nieve. Aquí encontrarás los pasos necesarios para configurarlo y ejecutarlo.
+Aquí encontrarás los pasos necesarios para configurar el proyecto y ejecutarlo.
 
-### Requisitos previos
+## Requisitos previos
 Asegúrate de tener instalado en tu máquina:
 - **Docker** y **Docker Compose**
 - **Python 3.9** o superior
 - **Git** para clonar el repositorio
-
-### Pasos para la configuración
-
-
-# Proyecto Administrativo Escuela de Deportes de Nieve
-
-Este proyecto es una solución completa que incluye un **Backend** con Python y Flask, una **Base de Datos** configurada en MySQL con Docker, y un **Frontend** desarrollado con React.
-
 
 ## Pasos para Configuración y Uso
 
@@ -105,14 +97,6 @@ El backend estará disponible en `http://localhost:5000`.
 
 ### Frontend
 El frontend estará disponible en `http://localhost:5173`.
-
-
-## Notas
-
-1. Asegúrate de tener Docker y Docker Compose instalados en tu máquina.
-2. Para ejecutar el frontend, necesitas tener Node.js y npm instalados.
-3. Si tienes problemas con los puertos, verifica los valores en los archivos `docker-compose.yaml` y `package.json` (en el caso del frontend).
-
 
 ¡Listo para usar! 🚀
 
