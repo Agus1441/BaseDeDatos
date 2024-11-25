@@ -7,7 +7,9 @@ CREATE TABLE login (
     CI INT PRIMARY KEY,
     correo VARCHAR(255) UNIQUE NOT NULL,
     contrasena VARCHAR(255) NOT NULL,
-    rol ENUM('alumno', 'instructor', 'administrativo') NOT NULL
+    rol ENUM('alumno', 'instructor', 'administrativo') NOT NULL,
+    CHECK (correo REGEXP '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$')
+
 );
 
 -- Tabla de actividades
@@ -16,7 +18,9 @@ CREATE TABLE actividades (
     nombre VARCHAR(100) NOT NULL,
     descripcion TEXT NOT NULL,
     costo DECIMAL(10, 2) NOT NULL,
-    edadRequerida INT NOT NULL
+    edadRequerida INT NOT NULL,
+    CHECK (costo >= 0),
+    CHECK (edadRequerida >= 0)
 );
 
 -- Tabla de equipamiento
@@ -24,7 +28,8 @@ CREATE TABLE equipamiento (
     ID INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     descripcion TEXT NOT NULL,
-    costo DECIMAL(10, 2) NOT NULL
+    costo DECIMAL(10, 2) NOT NULL,
+    CHECK (costo >= 0)
 );
 
 -- Tabla intermedia entre equipamiento y actividades
@@ -60,7 +65,8 @@ CREATE TABLE alumnos (
     fecha_nacimiento DATE NOT NULL,
     correo VARCHAR(255) NOT NULL UNIQUE,
     telefono VARCHAR(20) NOT NULL,
-    CHECK (fecha_nacimiento < CURRENT_DATE),
+    CHECK (fecha_nacimiento <= DATE_SUB(CURRENT_DATE, INTERVAL 12 YEAR)),
+    CHECK (telefono REGEXP '^[0-9]{8,15}$'),
     FOREIGN KEY (CI) REFERENCES login(CI) ON DELETE CASCADE
 );
 
@@ -73,6 +79,8 @@ CREATE TABLE clases (
     Cupos INT NOT NULL,
     Fecha_inicio DATE NOT NULL,
     Fecha_fin DATE NOT NULL,
+    CHECK (Cupos > 0),
+    CHECK (Fecha_inicio < Fecha_fin),
     FOREIGN KEY (CI_Instructor) REFERENCES instructores(CI) ON DELETE CASCADE,
     FOREIGN KEY (ID_Actividad) REFERENCES actividades(ID) ON DELETE CASCADE,
     FOREIGN KEY (ID_Turno) REFERENCES turnos(ID) ON DELETE CASCADE

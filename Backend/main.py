@@ -1460,7 +1460,13 @@ def modificar_clase(clase_id):
     conn = mysql.connector.connect(**config_db)
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT Fecha_inicio, Fecha_fin FROM clases WHERE ID = %s", (clase_id,))
+    # Obtener detalles de la clase y el turno actual
+    cursor.execute("""
+        SELECT c.Fecha_inicio, c.Fecha_fin, t.hora_inicio, t.hora_fin
+        FROM clases c
+        JOIN turnos t ON c.ID_Turno = t.ID
+        WHERE c.ID = %s
+    """, (clase_id,))
 
     
     clase = cursor.fetchone()
@@ -1469,18 +1475,21 @@ def modificar_clase(clase_id):
 
     fecha_inicio = clase['Fecha_inicio']
     fecha_fin = clase['Fecha_fin']
-    ahora = datetime.now().date()
+    hora_inicio_turno = clase['hora_inicio']
+    hora_fin_turno = clase['hora_fin']
+    ahora = datetime.now()
 
-    # Verificar que no se modifique una clase en el horario actual
-    if fecha_inicio <= ahora <= fecha_fin:
-        return jsonify({'error': 'La clase no puede modificarse en el horario actual'}), 403
+    # Verificar si estamos dentro del rango de fechas
+    if fecha_inicio <= ahora.date() <= fecha_fin:
+        # Verificar si estamos dentro del horario del turno
+        if hora_inicio_turno <= ahora.time() <= hora_fin_turno:
+            return jsonify({'error': 'La clase no puede modificarse en el horario actual'}), 403
 
     # Verificar si el instructor tiene un conflicto de horarios
     if nuevo_instructor and nuevo_turno and verificar_solapamiento(nuevo_instructor, nuevo_turno, fecha_inicio, fecha_fin):
         return jsonify({'error': 'El instructor ya tiene una clase en ese turno y horario'}), 409
 
     try:
-
         query = "UPDATE clases SET "
         values = []
         if nuevo_instructor:
