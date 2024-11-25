@@ -115,4 +115,4 @@ El frontend estará disponible en `http://localhost:5173`.
 
 
 ¡Listo para usar! 🚀
-```
+
