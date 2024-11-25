@@ -103,16 +103,9 @@ const ActivityManagement = () => {
           </li>
         ))}
       </ul>
-
       <Link to="/home">
         <button style={{ marginTop: '20px' }}>Volver</button>
       </Link>
-      <button onClick={() => {
-            logout();
-            navigate("/");
-          }}>
-            Logout
-          </button>
     </div>
   );
 };

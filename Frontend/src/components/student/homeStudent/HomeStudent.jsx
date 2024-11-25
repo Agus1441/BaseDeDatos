@@ -1,5 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { logout } from '../../services/Services';
+
+const handleLogout = async () => {
+  await logout();  // Espera a que logout se complete
+  navigate("/");   // Luego navega a la página principal
+};
 
 const HomeStudent = () => {
   return (
@@ -12,6 +18,7 @@ const HomeStudent = () => {
         <Link to="/Alquilar">
           <button>Ver y gestionar alquileres</button>
         </Link>
+        <button onClick={handleLogout}>Logout</button>
       </div>
     </div>
   );

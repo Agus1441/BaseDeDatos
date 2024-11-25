@@ -1,9 +1,12 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { logout } from '../../services/Services';
 
+const handleLogout = async () => {
+  await logout();
+};
+
 const Home = () => {
-  const navigate = useNavigate();
   return (
     <div>
       <h1>Bienvenido a la Escuela de Deportes de Nieve</h1>
@@ -23,12 +26,7 @@ const Home = () => {
         <Link to="/reports">
           <button>Reportes</button>
         </Link>
-        <button onClick={() => {
-            logout();
-            navigate("/");
-          }}>
-            Logout
-          </button>
+        <Link to="/"><button onClick={handleLogout} >Logout</button></Link>
       </div>
     </div>
   );

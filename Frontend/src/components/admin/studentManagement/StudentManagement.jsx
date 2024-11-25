@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import StudentForm from './StudentForm';
 import StudentList from './StudentList';
-import { getAlumnos, postAlumnos, deleteAlumnos } from '../../services/Services';
+import { getAlumnos, postAlumnos, deleteAlumnos, updateAlumnos } from '../../services/Services';
 
 const StudentManagement = () => {
   const [students, setStudents] = useState([]);
@@ -21,18 +21,36 @@ const StudentManagement = () => {
 }, []); // El array vacío asegura que solo se ejecute una vez al montar el componente
 
 
-  const handleAddOrEditStudent = async (student) => {
-    if (editingStudent) {
-      setStudents(students.map((s) => (s.CI === editingStudent.CI ? student : s)));
-      fetchStudents();
-    } else {
-      const nuevoAlumno = await postAlumnos(student)
-      if(nuevoAlumno){
-        setStudents([...students, nuevoAlumno]);
+const handleAddOrEditStudent = async (student) => {
+  if (editingStudent) {
+    try {
+      const updatedStudent = await updateAlumnos(student);
+      if (updatedStudent) {
+        setStudents(
+          students.map((s) =>
+            s.CI === editingStudent.CI ? updatedStudent : s
+          )
+        );
+      } else {
+        setError('Error al actualizar el estudiante.');
       }
+    } catch (err) {
+      setError('Error al realizar la operación de edición.');
     }
-    setEditingStudent(null);
-  };
+  } else {
+    try {
+      const nuevoAlumno = await postAlumnos(student);
+      if (nuevoAlumno) {
+        setStudents([...students, nuevoAlumno]);
+      } else {
+        setError('Error al agregar un nuevo estudiante.');
+      }
+    } catch (err) {
+      setError('Error al realizar la operación de registro.');
+    }
+  }
+  setEditingStudent(null);
+};
 
   const handleEdit = (student) => {
     setEditingStudent(student);
