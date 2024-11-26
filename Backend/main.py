@@ -972,7 +972,7 @@ def modificar_actividad(id_actividad):
     cursor = connection.cursor()
     
     try:
-        # Construcción de la consulta de actualización dinámica
+        
         query = "UPDATE actividades SET "
         values = []
         
@@ -988,7 +988,7 @@ def modificar_actividad(id_actividad):
             query += "costo = %s, "
             values.append(costo)
         
-        # Remueve la última coma y espacio, y añade la condición WHERE
+        
         query = query.rstrip(', ')
         query += " WHERE ID = %s"
         values.append(id_actividad)
