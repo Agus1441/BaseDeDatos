@@ -10,7 +10,6 @@ CORS(app)
 app.secret_key = secrets.token_hex(16) 
 swagger = Swagger(app)
 
-# Configuración de la base de datos
 config_db = {
     'user': 'root',
     'password': 'root',
@@ -144,7 +143,6 @@ def crear_instructor():
     cursor = conn.cursor()
 
     try:
-        # Verificar si el CI existe en alguna tabla
         cursor.execute("SELECT rol FROM login WHERE CI = %s", (ci,))
         login_entry = cursor.fetchone()
 
@@ -155,13 +153,11 @@ def crear_instructor():
             return jsonify({'error': 'El instructor ya existe'}), 400
 
         if login_entry and not instructor_entry:
-            # Borrar entrada de login si no está sincronizada
             cursor.execute("DELETE FROM login WHERE CI = %s", (ci,))
             conn.commit()
             return jsonify({'error': 'El usuario estaba en login pero no como instructor, fue eliminado'}), 400
 
         if not login_entry and instructor_entry:
-            # Borrar entrada de instructores si no está sincronizada
             cursor.execute("DELETE FROM instructores WHERE CI = %s", (ci,))
             conn.commit()
             return jsonify({'error': 'El usuario estaba en instructores pero no en login, fue eliminado'}), 400
@@ -169,7 +165,7 @@ def crear_instructor():
         if login_entry and login_entry[3] != 'instructor':
             return jsonify({'error': 'El CI ya está registrado con otro rol en login'}), 409
 
-        # Crear el instructor en ambas tablas
+
         cursor.execute(
             "INSERT INTO login (CI, correo, contrasena, rol) VALUES (%s, %s, %s, %s)",
             (ci, correo, contrasena, 'instructor')
@@ -214,7 +210,7 @@ def eliminar_instructor(ci):
     conn = mysql.connector.connect(**config_db)
     cursor = conn.cursor()
     try:
-        # Verificar si el instructor existe en ambas tablas
+
         cursor.execute("SELECT * FROM instructores WHERE CI = %s", (ci,))
         instructor_entry = cursor.fetchone()
 
@@ -224,10 +220,10 @@ def eliminar_instructor(ci):
         cursor.execute("SELECT * FROM login WHERE CI = %s AND rol = %s", (ci, 'instructor'))
         login_entry = cursor.fetchone()
 
-        # Eliminar instructor de la tabla instructores
+        
         cursor.execute("DELETE FROM instructores WHERE CI = %s", (ci,))
 
-        # Si el instructor está en login, eliminar también su entrada
+
         if login_entry:
             cursor.execute("DELETE FROM login WHERE CI = %s", (ci,))
 
@@ -349,7 +345,6 @@ def obtener_turnos():
     cursor.close()
     connection.close()
 
-    # Convertir timedelta a string para poder serializarlo como JSON
     turnos = []
     for row in result:
         turnos.append({
@@ -638,7 +633,7 @@ def crear_alumno():
     if not isinstance(data, dict):
         return jsonify({'error': 'El cuerpo de la solicitud debe ser JSON válido'}), 400
 
-    # Extraer datos del cuerpo de la solicitud
+
     ci = data.get('CI')
     nombre = data.get('nombre')
     apellido = data.get('apellido')
@@ -654,18 +649,18 @@ def crear_alumno():
     cursor = conn.cursor()
 
     try:
-        # Verificar si el alumno ya existe en las tablas `alumnos` y `login`
+        
         cursor.execute("SELECT * FROM alumnos WHERE CI = %s", (ci,))
         alumno_entry = cursor.fetchone()
 
         cursor.execute("SELECT * FROM login WHERE CI = %s", (ci,))
         login_entry = cursor.fetchone()
 
-        # Si está en ambas tablas, el alumno ya existe, se rechaza la solicitud
+       
         if alumno_entry and login_entry:
             return jsonify({'error': 'El alumno ya existe en ambas tablas'}), 409
 
-        # Si está en una tabla pero no en la otra, eliminar la entrada inconsistente
+        
         if alumno_entry and not login_entry:
             cursor.execute("DELETE FROM alumnos WHERE CI = %s", (ci,))
             conn.commit()
@@ -676,17 +671,16 @@ def crear_alumno():
             conn.commit()
             return jsonify({'error': 'Datos inconsistentes: eliminado de login. Reintente'}), 400
 
-        # Si está en login con un rol diferente, no permitir crear al alumno
+        
         if login_entry and login_entry[3] != 'alumno': 
             return jsonify({'error': 'El CI ya existe con un rol diferente en login'}), 409
 
-        # Crear entrada en la tabla `login`
         cursor.execute(
             "INSERT INTO login (CI, correo, contrasena, rol) VALUES (%s, %s, %s, %s)",
             (ci, correo, contrasena, 'alumno')
         )
 
-        # Crear entrada en la tabla `alumnos`
+     
         cursor.execute(
             """
             INSERT INTO alumnos (CI, nombre, apellido, fecha_nacimiento, correo, telefono) 
@@ -730,18 +724,18 @@ def eliminar_alumno(ci):
     conn = mysql.connector.connect(**config_db)
     cursor = conn.cursor()
     try:
-        # Verificar si el alumno existe en ambas tablas
+ 
         cursor.execute("SELECT * FROM alumnos WHERE CI = %s", (ci,))
         alumno_entry = cursor.fetchone()
 
         cursor.execute("SELECT * FROM login WHERE CI = %s AND rol = 'alumno'", (ci,))
         login_entry = cursor.fetchone()
 
-        # Si el alumno no está en ambas tablas, retornar error
+      
         if not alumno_entry and not login_entry:
             return jsonify({'error': 'Alumno no encontrado'}), 404
 
-        # Eliminar entradas de las tablas correspondientes
+
         if alumno_entry:
             cursor.execute("DELETE FROM alumnos WHERE CI = %s", (ci,))
 
@@ -964,7 +958,6 @@ def modificar_actividad(id_actividad):
     descripcion = data.get('descripcion')
     costo = data.get('costo')
 
-    # Verificación de que al menos un campo sea proporcionado
     if not (nombre or descripcion or costo):
         return jsonify({'error': 'Debe proporcionar al menos un campo para actualizar'}), 400
 
@@ -1197,17 +1190,16 @@ def registro():
     cursor = connection.cursor()
 
     try:
-        # Verificar si la cédula ya existe
+       
         cursor.execute("SELECT * FROM login WHERE CI = %s", (ci,))
         if cursor.fetchone():
             return jsonify({"message": "Esta cédula ya está registrada"}), 400
 
-        # Verificar si el correo ya existe
+    
         cursor.execute("SELECT * FROM login WHERE correo = %s", (correo,))
         if cursor.fetchone():
             return jsonify({"message": "El correo ya está registrado"}), 400
 
-        # Insertar el nuevo usuario administrativo
         cursor.execute("""
             INSERT INTO login (CI, correo, contrasena, rol)
             VALUES (%s, %s, %s, %s)
@@ -1460,7 +1452,7 @@ def modificar_clase(clase_id):
     conn = mysql.connector.connect(**config_db)
     cursor = conn.cursor(dictionary=True)
 
-    # Obtener detalles de la clase y el turno actual
+  
     cursor.execute("""
         SELECT c.Fecha_inicio, c.Fecha_fin, t.hora_inicio, t.hora_fin
         FROM clases c
@@ -1479,13 +1471,12 @@ def modificar_clase(clase_id):
     hora_fin_turno = clase['hora_fin']
     ahora = datetime.now()
 
-    # Verificar si estamos dentro del rango de fechas
+
     if fecha_inicio <= ahora.date() <= fecha_fin:
-        # Verificar si estamos dentro del horario del turno
         if hora_inicio_turno <= ahora.time() <= hora_fin_turno:
             return jsonify({'error': 'La clase no puede modificarse en el horario actual'}), 403
 
-    # Verificar si el instructor tiene un conflicto de horarios
+
     if nuevo_instructor and nuevo_turno and verificar_solapamiento(nuevo_instructor, nuevo_turno, fecha_inicio, fecha_fin):
         return jsonify({'error': 'El instructor ya tiene una clase en ese turno y horario'}), 409
 
@@ -1786,42 +1777,41 @@ def inscribir_alumno():
     cursor = conn.cursor(dictionary=True)
 
     try:
-        # Obtener información de la clase
+  
         cursor.execute("SELECT * FROM clases WHERE ID = %s", (id_clase,))
         clase = cursor.fetchone()
         if not clase:
             return jsonify({'error': 'Clase no encontrada'}), 404
 
-        # Obtener información del alumno
+
         cursor.execute("SELECT * FROM alumnos WHERE CI = %s", (id_alumno,))
         alumno = cursor.fetchone()
         if not alumno:
             return jsonify({'error': 'Alumno no encontrado'}), 404
 
-        # Verificar que el alumno no esté inscrito en la clase
+        
         cursor.execute("SELECT * FROM alumno_clase WHERE ID_Alumno = %s AND ID_Clase = %s", (id_alumno, id_clase))
         inscripcion = cursor.fetchone()
         
         if inscripcion:
             return jsonify({'error': 'El alumno ya está inscrito en esta clase'}), 400
 
-        # Verificar la restricción de cupos
+ 
         cursor.execute("SELECT COUNT(*) AS inscriptos FROM alumno_clase WHERE ID_Clase = %s", (id_clase,))
         inscriptos = cursor.fetchone()['inscriptos']
         if inscriptos >= clase['Cupos']:
             return jsonify({'error': 'No hay cupos disponibles en esta clase'}), 400
 
-        # Calcular la edad del alumno
+
         fecha_nacimiento = alumno['fecha_nacimiento']
         edad_alumno = (datetime.now().date() - fecha_nacimiento).days // 365
 
-        # Verificar la restricción de edad
+
         cursor.execute("SELECT edadRequerida FROM actividades WHERE ID = %s", (clase['ID_Actividad'],))
         actividad = cursor.fetchone()
         if edad_alumno < actividad['edadRequerida']:
             return jsonify({'error': 'El alumno no cumple con la restricción de edad para esta actividad'}), 400
 
-        # Verificar conflictos de horario
         cursor.execute("""
             SELECT C.Fecha_inicio, C.Fecha_fin, T.hora_inicio, T.hora_fin
             FROM alumno_clase AC
@@ -1838,7 +1828,7 @@ def inscribir_alumno():
         if conflicto_horario:
             return jsonify({'error': 'Conflicto de horario: el alumno ya está inscrito en otra clase en el mismo horario'}), 400
 
-        # Inscribir al alumno en la clase
+
         cursor.execute("INSERT INTO alumno_clase (ID_Alumno, ID_Clase) VALUES (%s, %s)", (id_alumno, id_clase))
         conn.commit()
         return jsonify({'message': 'Alumno inscrito exitosamente en la clase'}), 201
@@ -1896,14 +1886,14 @@ def dar_de_baja_alumno():
     cursor = conn.cursor()
 
     try:
-        # Verificar que el alumno esté inscrito en la clase
+        
         cursor.execute("SELECT * FROM alumno_clase WHERE ID_Alumno = %s AND ID_Clase = %s", (id_alumno, id_clase))
         inscripcion = cursor.fetchone()
         
         if not inscripcion:
             return jsonify({'error': 'El alumno no está inscrito en esta clase'}), 404
 
-        # Eliminar la inscripción del alumno en la clase
+  
         cursor.execute("DELETE FROM alumno_clase WHERE ID_Alumno = %s AND ID_Clase = %s", (id_alumno, id_clase))
         conn.commit()
         return jsonify({'message': 'Alumno dado de baja exitosamente de la clase'}), 200
